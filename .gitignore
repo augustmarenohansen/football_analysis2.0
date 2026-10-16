@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+!.env.example
+data/api_football/
+models/match_bundle.joblib

@@ -1,0 +1,101 @@
+rk,squad,mp,w,d,l,gf,ga,gd,pts,pts/mp,xg,xga,xgd,xgd/90,last_5,attendance,top_team_scorer,goalkeeper,notes,sesonger
+1,Milan,7,5,1,1,11,4,7,16,2.29,10.5,5.7,4.8,0.68,W W W D W,72458,Christian Pulisic - 4,Mike Maignan,,2020
+2,Inter,7,5,0,2,18,8,10,15,2.14,13.1,5.7,7.4,1.06,L W W W W,70683,"Marcus Thuram, Lautaro Martínez... - 3",Yann Sommer,,2020
+3,Napoli,7,5,0,2,12,7,5,15,2.14,12.4,8.2,4.2,0.59,W W L W L,50270,Kevin De Bruyne - 3,Alex Meret,,2020
+4,Roma,7,5,0,2,7,3,4,15,2.14,8.2,5.8,2.5,0.35,L W W W L,63625,Matìas Soulé - 3,Mile Svilar,,2020
+5,Bologna,7,4,1,2,11,5,6,13,1.86,9.4,5.9,3.5,0.49,L W D W W,28106,Riccardo Orsolini - 5,Łukasz Skorupski,,2020
+6,Como,7,3,3,1,9,5,4,12,1.71,9.1,6.7,2.4,0.35,D W D D W,11622,Nicolás Paz - 4,Jean Butez,,2020
+7,Juventus,7,3,3,1,9,7,2,12,1.71,7.9,7.5,0.4,0.05,W D D D L,41284,Dušan Vlahović - 2,Michele Di Gregorio,,2020
+8,Atalanta,7,2,5,0,11,5,6,11,1.57,10.6,6.1,4.5,0.65,W W D D D,22220,"Nikola Krstović, Charles De Ketelaere... - 2",Marco Carnesecchi,,2020
+9,Sassuolo,7,3,1,3,8,8,0,10,1.43,7.1,9.5,-2.3,-0.33,W L W W D,15094,Andrea Pinamonti - 2,Arijanet Muric,,2020
+10,Cremonese,7,2,4,1,8,9,-1,10,1.43,5.4,11.0,-5.6,-0.79,D D D L D,11569,"Federico Bonazzoli, Federico Baschirotto... - 2",Emil Audero,,2020
+11,Udinese,7,2,3,2,7,10,-3,9,1.29,8.0,7.5,0.5,0.07,W L L D D,21022,Keinan Davis - 2,Razvan Sava,,2020
+12,Lazio,7,2,2,3,10,7,3,8,1.14,8.8,9.9,-1.1,-0.15,L L W D D,46868,Matteo Cancellieri - 3,Ivan Provedel,,2020
+13,Cagliari,7,2,2,3,6,8,-2,8,1.14,6.4,11.9,-5.5,-0.79,W W L D L,16063,Andrea Belotti - 2,Elia Caprile,,2020
+14,Torino,7,2,2,3,6,13,-7,8,1.14,8.5,10.7,-2.2,-0.31,W L L D W,21729,Giovanni Simeone - 3,Franco Israel,,2020
+15,Parma,7,1,3,3,3,7,-4,6,0.86,5.9,7.7,-1.8,-0.26,L D W L D,17933,Mateo Pellegrino - 2,Zion Suzuki,,2020
+16,Lecce,7,1,3,3,5,10,-5,6,0.86,5.1,9.0,-4.0,-0.56,L L D W D,26075,"Lassana Coulibaly, Riccardo Sottil... - 1",Wladimiro Falcone,,2020
+17,Hellas Verona,7,0,4,3,2,9,-7,4,0.57,8.0,8.7,-0.7,-0.1,D D L L D,23717,"Suat Serdar, Gift Orban - 1",Lorenzo Montipò,,2020
+18,Fiorentina,7,0,3,4,5,10,-5,3,0.43,7.7,10.2,-2.4,-0.35,L L D L L,21095,Rolando Mandragora - 2,David de Gea,,2020
+19,Genoa,7,0,3,4,3,9,-6,3,0.43,7.9,7.2,0.8,0.11,D L L L D,31890,"Caleb Ekuban, Mikael Ellertsson... - 1",Nicola Leali,,2020
+20,Pisa,7,0,3,4,3,10,-7,3,0.43,5.4,10.6,-5.3,-0.75,L L D L D,11362,"M'Bala Nzola, Lorran - 1",Adrian Šemper,,2020
+1,Napoli,38,24,10,4,59,27,32,82,2.16,52.9,29.6,23.3,0.61,,50909,Romelu Lukaku - 14,Alex Meret,→ Champions League via league finish,2021
+2,Inter,38,24,9,5,79,35,44,81,2.13,66.9,36.4,30.5,0.8,,70126,Marcus Thuram - 14,Yann Sommer,→ Champions League via league finish,2021
+3,Atalanta,38,22,8,8,78,37,41,74,1.95,65.0,38.6,26.4,0.69,,22675,Mateo Retegui - 25,Marco Carnesecchi,→ Champions League via league finish,2021
+4,Juventus,38,18,16,4,58,35,23,70,1.84,51.0,34.0,16.9,0.45,,40275,Dušan Vlahović - 10,Michele Di Gregorio,→ Champions League via league finish,2021
+5,Roma,38,20,9,9,56,35,21,69,1.82,53.0,40.9,12.1,0.32,,61895,Artem Dovbyk - 12,Mile Svilar,→ Europa League via league finish,2021
+6,Fiorentina,38,19,8,11,60,41,19,65,1.71,48.9,42.8,6.1,0.16,,20358,Moise Kean - 19,David de Gea,→ Conference League via league finish,2021
+7,Lazio,38,18,11,9,61,49,12,65,1.71,57.2,37.7,19.5,0.51,,41161,"Pedro, Valentín Castellanos - 10",Ivan Provedel,,2021
+8,Milan,38,18,9,11,61,43,18,63,1.66,63.7,41.3,22.4,0.59,,71523,Christian Pulisic - 11,Mike Maignan,,2021
+9,Bologna,38,16,14,8,57,47,10,62,1.63,49.3,36.7,12.6,0.33,,27772,Riccardo Orsolini - 15,Łukasz Skorupski,→ Europa League via cup win,2021
+10,Como,38,13,10,15,49,52,-3,49,1.29,45.4,43.0,2.4,0.06,,10604,Assane Diao - 8,Jean Butez,,2021
+11,Torino,38,10,14,14,39,45,-6,44,1.16,34.6,50.4,-15.8,-0.42,,23327,Che Adams - 9,Vanja Milinković-Savić,,2021
+12,Udinese,38,12,8,18,41,56,-15,44,1.16,38.2,52.6,-14.4,-0.38,,21098,Lorenzo Lucca - 12,Maduka Okoye,,2021
+13,Genoa,38,10,13,15,37,49,-12,43,1.13,37.2,47.2,-10.0,-0.26,,31248,Andrea Pinamonti - 10,Nicola Leali,,2021
+14,Hellas Verona,38,10,7,21,34,66,-32,37,0.97,33.8,53.4,-19.6,-0.51,,25391,Casper Tengstedt - 6,Lorenzo Montipò,,2021
+15,Cagliari,38,9,9,20,40,56,-16,36,0.95,42.7,55.3,-12.6,-0.33,,16071,Roberto Piccoli - 10,Elia Caprile,,2021
+16,Parma,38,7,15,16,44,58,-14,36,0.95,43.1,56.4,-13.3,-0.35,,19236,Ange-Yoan Bonny - 6,Zion Suzuki,,2021
+17,Lecce,38,8,10,20,27,58,-31,34,0.89,34.6,57.1,-22.5,-0.59,,25980,Nikola Krstović - 11,Wladimiro Falcone,,2021
+18,Empoli,38,6,13,19,33,59,-26,31,0.82,32.5,50.1,-17.6,-0.46,,10648,Sebastiano Esposito - 8,Devis Vásquez,Relegated,2021
+19,Venezia,38,5,14,19,32,56,-24,29,0.76,35.8,57.5,-21.7,-0.57,,10415,Joel Pohjanpalo - 6,Filip Stankovic,Relegated,2021
+20,Monza,38,3,9,26,28,69,-41,18,0.47,29.9,54.7,-24.8,-0.65,,11271,Dany Mota - 5,Stefano Turati,Relegated,2021
+1,Inter,38,29,7,2,89,22,67,94,2.47,78.2,31.2,47.1,1.24,,72838,Lautaro Martínez - 24,Yann Sommer,→ Champions League via league finish,2022
+2,Milan,38,22,9,7,76,49,27,75,1.97,66.2,45.4,20.8,0.55,,72000,Olivier Giroud - 15,Mike Maignan,→ Champions League via league finish,2022
+3,Juventus,38,19,14,5,54,31,23,71,1.87,54.6,30.1,24.6,0.65,,38142,Dušan Vlahović - 16,Wojciech Szczęsny,→ Champions League via league finish,2022
+4,Atalanta,38,21,6,11,72,42,30,69,1.82,57.8,41.1,16.7,0.44,,14725,"Gianluca Scamacca, Teun Koopmeiners - 12",Marco Carnesecchi,→ Champions League via league finish,2022
+5,Bologna,38,18,14,6,54,32,22,68,1.79,47.9,37.1,10.9,0.29,,25914,Joshua Zirkzee - 11,Łukasz Skorupski,→ Champions League via league finish,2022
+6,Roma,38,18,9,11,65,46,19,63,1.66,51.4,41.8,9.6,0.25,,62924,"Romelu Lukaku, Paulo Dybala - 13",Rui Patrício,→ Europa League via league finish,2022
+7,Lazio,38,18,7,13,49,39,10,61,1.61,46.5,42.0,4.5,0.12,,42689,Ciro Immobile - 7,Ivan Provedel,→ Europa League via league finish,2022
+8,Fiorentina,38,17,9,12,61,46,15,60,1.58,51.7,48.2,3.6,0.09,,29941,Nicolás González - 12,Pietro Terracciano,→ Conference League via league finish,2022
+9,Torino,38,13,14,11,36,36,0,53,1.39,37.7,37.4,0.3,0.01,,22753,Duván Zapata - 12,Vanja Milinković-Savić,,2022
+10,Napoli,38,13,14,11,55,48,7,53,1.39,61.4,38.4,23.0,0.61,,45622,Victor Osimhen - 15,Alex Meret,,2022
+11,Genoa,38,12,13,13,45,45,0,49,1.29,35.7,42.8,-7.1,-0.19,,29609,Albert Guðmundsson - 14,Josep Martinez,,2022
+12,Monza,38,11,12,15,39,51,-12,45,1.18,39.5,56.3,-16.8,-0.44,,12172,Andrea Colpani - 8,Michele Di Gregorio,,2022
+13,Hellas Verona,38,9,11,18,38,51,-13,38,1.0,38.0,48.7,-10.7,-0.28,,21996,Cyril Ngonge - 6,Lorenzo Montipò,,2022
+14,Lecce,38,8,14,16,32,54,-22,38,1.0,43.1,53.3,-10.2,-0.27,,26642,Nikola Krstović - 7,Wladimiro Falcone,,2022
+15,Udinese,38,6,19,13,37,53,-16,37,0.97,39.1,49.1,-10.0,-0.26,,21537,Lorenzo Lucca - 8,Maduka Okoye,,2022
+16,Cagliari,38,8,12,18,42,68,-26,36,0.95,42.9,54.5,-11.6,-0.3,,16168,Nicolas Viola - 5,Simone Scuffet,,2022
+17,Empoli,38,9,9,20,29,54,-25,36,0.95,36.2,52.9,-16.7,-0.44,,11092,M'Baye Niang - 6,Elia Caprile,,2022
+18,Frosinone,38,8,11,19,44,69,-25,35,0.92,45.8,57.7,-12.0,-0.32,,15824,Matìas Soulé - 11,Stefano Turati,Relegated,2022
+19,Sassuolo,38,7,9,22,43,75,-32,30,0.79,39.8,61.6,-21.8,-0.57,,13905,Andrea Pinamonti - 11,Andrea Consigli,Relegated,2022
+20,Salernitana,38,2,11,25,32,81,-49,17,0.45,30.3,74.4,-44.1,-1.16,,18787,Antonio Candreva - 6,Guillermo Ochoa,Relegated,2022
+1,Napoli,38,28,6,4,77,28,49,90,2.37,64.7,31.8,33.0,0.87,,46173,Victor Osimhen - 26,Alex Meret,→ Champions League via league finish,2023
+2,Lazio,38,22,8,8,60,30,30,74,1.95,51.1,41.3,9.8,0.26,,44141,Ciro Immobile - 12,Ivan Provedel,→ Champions League via league finish,2023
+3,Inter,38,23,3,12,71,42,29,72,1.89,68.0,36.5,31.6,0.83,,72630,Lautaro Martínez - 21,André Onana,→ Champions League via league finish,2023
+4,Milan,38,20,10,8,64,43,21,70,1.84,58.8,41.1,17.7,0.47,,71880,Rafael Leão - 15,Mike Maignan,→ Champions League via league finish,2023
+5,Atalanta,38,19,7,12,66,48,18,64,1.68,57.7,41.4,16.3,0.43,,18241,Ademola Lookman - 13,Juan Musso,→ Europa League via league finish,2023
+6,Roma,38,18,9,11,50,38,12,63,1.66,57.7,32.3,25.4,0.67,,62032,Paulo Dybala - 12,Rui Patrício,→ Europa League via league finish,2023
+7,Juventus,38,22,6,10,56,33,23,62,1.63,55.3,41.6,13.7,0.36,,37656,Dušan Vlahović - 10,Wojciech Szczęsny,"10-point deduction 1, → Conference League via league finish",2023
+8,Fiorentina,38,15,11,12,53,43,10,56,1.47,55.0,43.4,11.7,0.31,,32200,Arthur Cabral - 8,Pietro Terracciano,,2023
+9,Bologna,38,14,12,12,53,49,4,54,1.42,43.8,48.7,-4.9,-0.13,,22314,Riccardo Orsolini - 11,Łukasz Skorupski,,2023
+10,Torino,38,14,11,13,42,41,1,53,1.39,41.8,40.0,1.8,0.05,,19464,Antonio Sanabria - 12,Vanja Milinković-Savić,,2023
+11,Monza,38,14,10,14,48,52,-4,52,1.37,45.9,51.3,-5.4,-0.14,,12413,"Patrick Ciurria, Carlos Augusto - 6",Michele Di Gregorio,,2023
+12,Udinese,38,11,13,14,47,48,-1,46,1.21,46.9,51.8,-4.9,-0.13,,21616,Beto - 10,Marco Silvestri,,2023
+13,Sassuolo,38,12,9,17,47,61,-14,45,1.18,51.6,49.7,1.9,0.05,,13011,Domenico Berardi - 12,Andrea Consigli,,2023
+14,Empoli,38,10,13,15,37,49,-12,43,1.13,38.8,58.3,-19.5,-0.51,,9808,Nicolò Cambiaghi - 6,Guglielmo Vicario,,2023
+15,Salernitana,38,9,15,14,48,62,-14,42,1.11,36.7,67.1,-30.5,-0.8,,20082,Boulaye Dia - 16,Guillermo Ochoa,,2023
+16,Lecce,38,8,12,18,33,46,-13,36,0.95,36.3,42.4,-6.1,-0.16,,24654,Gabriel Strefezza - 8,Wladimiro Falcone,,2023
+17,Spezia,38,6,13,19,31,62,-31,31,0.82,41.5,59.5,-18.0,-0.47,,9258,M'Bala Nzola - 13,Bartłomiej Drągowski,"Relegated, → Relegation tie-breaker",2023
+18,Hellas Verona,38,7,10,21,31,59,-28,31,0.82,35.8,49.9,-14.1,-0.37,,18752,Simone Verdi - 5,Lorenzo Montipò,→ Relegation tie-breaker,2023
+19,Cremonese,38,5,12,21,36,69,-33,27,0.71,38.7,66.1,-27.4,-0.72,,11978,Daniel Ciofani - 8,Marco Carnesecchi,Relegated,2023
+20,Sampdoria,38,3,10,25,24,71,-47,19,0.5,34.1,66.3,-32.2,-0.85,,20133,Manolo Gabbiadini - 7,Emil Audero,Relegated,2023
+1,Milan,38,26,8,4,69,31,38,86,2.26,59.7,35.9,23.8,0.63,,44015,"Olivier Giroud, Rafael Leão - 11",Mike Maignan,→ Champions League via league finish,2024
+2,Inter,38,25,9,4,84,32,52,84,2.21,81.6,39.1,42.5,1.12,,44473,Lautaro Martínez - 21,Samir Handanović,→ Champions League via league finish,2024
+3,Napoli,38,24,7,7,74,31,43,79,2.08,57.8,32.5,25.3,0.67,,28119,Victor Osimhen - 14,David Ospina,→ Champions League via league finish,2024
+4,Juventus,38,20,10,8,57,37,20,70,1.84,51.4,38.1,13.4,0.35,,22621,Paulo Dybala - 10,Wojciech Szczęsny,→ Champions League via league finish,2024
+5,Lazio,38,18,10,10,77,58,19,64,1.68,55.3,47.7,7.6,0.2,,23263,Ciro Immobile - 27,Thomas Strakosha,→ Europa League via league finish,2024
+6,Roma,38,18,9,11,59,43,16,63,1.66,65.1,38.4,26.8,0.7,,41929,Tammy Abraham - 17,Rui Patrício,→ Europa League via league finish,2024
+7,Fiorentina,38,19,5,14,59,51,8,62,1.63,60.0,40.6,19.4,0.51,,21107,Dušan Vlahović - 17,Pietro Terracciano,→ Europa Conference League via league finish,2024
+8,Atalanta,38,16,11,11,65,48,17,59,1.55,62.4,45.3,17.2,0.45,,10447,Mario Pašalić - 13,Juan Musso,,2024
+9,Hellas Verona,38,14,11,13,65,59,6,53,1.39,50.4,49.0,1.4,0.04,,13894,Giovanni Simeone - 17,Lorenzo Montipò,,2024
+10,Torino,38,13,11,14,46,41,5,50,1.32,48.7,38.9,9.8,0.26,,9846,Andrea Belotti - 8,Vanja Milinković-Savić,,2024
+11,Sassuolo,38,13,11,14,64,66,-2,50,1.32,55.7,66.4,-10.7,-0.28,,8362,Gianluca Scamacca - 16,Andrea Consigli,,2024
+12,Udinese,38,11,14,13,61,58,3,47,1.24,51.3,52.4,-1.0,-0.03,,12144,Gerard Deulofeu - 13,Marco Silvestri,,2024
+13,Bologna,38,12,10,16,44,55,-11,46,1.21,44.9,52.6,-7.7,-0.2,,14158,Marko Arnautović - 14,Łukasz Skorupski,,2024
+14,Empoli,38,10,11,17,50,70,-20,41,1.08,44.9,66.0,-21.2,-0.56,,6356,Andrea Pinamonti - 13,Guglielmo Vicario,,2024
+15,Sampdoria,38,10,6,22,46,63,-17,36,0.95,36.7,56.1,-19.3,-0.51,,9417,Francesco Caputo - 11,Emil Audero,,2024
+16,Spezia,38,10,6,22,41,71,-30,36,0.95,40.1,64.4,-24.3,-0.64,,6709,Daniele Verde - 8,Ivan Provedel,,2024
+17,Salernitana,38,7,10,21,33,78,-45,31,0.82,36.5,65.2,-28.7,-0.76,,15073,Federico Bonazzoli - 10,Vid Belec,,2024
+18,Cagliari,38,6,12,20,34,68,-34,30,0.79,39.0,61.0,-21.9,-0.58,,9718,João Pedro - 13,Alessio Cragno,Relegated,2024
+19,Genoa,38,4,16,18,27,60,-33,28,0.74,37.2,54.1,-16.9,-0.44,,12326,Mattia Destro - 9,Salvatore Sirigu,Relegated,2024
+20,Venezia,38,6,9,23,34,69,-35,27,0.71,36.5,71.8,-35.3,-0.93,,6648,Thomas Henry - 9,Niki Mäenpää,Relegated,2024

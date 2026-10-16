@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Predictor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Football Match Predictor</h1>
+        
+        <label for="league-select">League</label>
+        <select id="league-select" class="team-select"></select>
+        <p id="data-status" role="status">Loading data status...</p>
+        <div class="teams-container">
+            <div class="team-section">
+                <h2>Home Team</h2>
+                <select id="home-team" class="team-select">
+                    <option value="">Select team...</option>
+                </select>
+                <div class="team-stats" id="home-stats">
+                    <div class="stat-group">
+                        <h3>Season Stats</h3>
+                        <p>Matches: <span id="home_mp">-</span></p>
+                        <p>Wins: <span id="home_w">-</span></p>
+                        <p>Draws: <span id="home_d">-</span></p>
+                        <p>Losses: <span id="home_l">-</span></p>
+                    </div>
+                    <div class="stat-group">
+                        <h3>Goals</h3>
+                        <p>Scored: <span id="home_gf">-</span></p>
+                        <p>Conceded: <span id="home_ga">-</span></p>
+                        <p>Difference: <span id="home_gd">-</span></p>
+                    </div>
+                    <div class="stat-group">
+                        <h3>Recent Form</h3>
+                        <p>Last 5: <span id="home_last_5">-</span></p>
+                        <p>Top Scorer: <span id="home_top_scorer">-</span></p>
+                        <p>Goalkeeper: <span id="home_goalkeeper">-</span></p>
+                    </div>
+                </div>
+            </div>
+
+           <div class="prediction-section">
+  <h2>Prediction</h2>
+  
+  <div id="prediction-result" class="prediction-result">
+    <p>Select both teams to see prediction</p>
+  </div>
+
+
+  <button id="predict-btn" class="predict-btn" disabled>Predict</button>
+</div>
+
+
+            <div class="team-section">
+                <h2>Away Team</h2>
+                <select id="away-team" class="team-select">
+                    <option value="">Select team...</option>
+                </select>
+                <div class="team-stats" id="away-stats">
+                    <div class="stat-group">
+                        <h3>Season Stats</h3>
+                        <p>Matches: <span id="away_mp">-</span></p>
+                        <p>Wins: <span id="away_w">-</span></p>
+                        <p>Draws: <span id="away_d">-</span></p>
+                        <p>Losses: <span id="away_l">-</span></p>
+                    </div>
+                    <div class="stat-group">
+                        <h3>Goals</h3>
+                        <p>Scored: <span id="away_gf">-</span></p>
+                        <p>Conceded: <span id="away_ga">-</span></p>
+                        <p>Difference: <span id="away_gd">-</span></p>
+                    </div>
+                    <div class="stat-group">
+                        <h3>Recent Form</h3>
+                        <p>Last 5: <span id="away_last_5">-</span></p>
+                        <p>Top Scorer: <span id="away_top_scorer">-</span></p>
+                        <p>Goalkeeper: <span id="away_goalkeeper">-</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>
