@@ -1,6 +1,15 @@
-# Footballanalyzer
-School project using ML to anallize and predict football match outcomes.
+# Football Analyzer
 
-@Author Steffen Ulvestad, August Mareno Hansen
+A football analysis and match prediction app supporting **Premier League, La Liga, Serie A, Bundesliga, and Ligue 1**.
 
-During our time at HVL we we're tasked on creating our own self defined ML project. We decided on creating a football match predictor.
+Originally created as a student project at HVL by **Steffen Ulvestad and August Mareno Hansen**.
+
+See the [main README](../README.md) for installation, local startup, API-Football configuration, supported seasons, quota limits, model validation, and tests.
+
+If you are already in this directory and the Python environment is configured, start the app with:
+
+```sh
+sh ../start.sh
+```
+
+Then open [localhost:8000](http://localhost:8000).
