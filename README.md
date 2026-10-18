@@ -40,9 +40,9 @@ cd ..
 sh start.sh
 ```
 
-Replace `python3.10` with your installed compatible Python version if necessary. Dependencies use scikit-learn 1.7.2 to match the bundled legacy model.
+Replace `python3.10` with your installed compatible Python version if necessary. Dependencies use scikit-learn 1.7.2 for model training and loading.
 
-The original Serie A dataset and model work without an API key. To enable the new match model and the other leagues on a fresh checkout, import data as described below. Downloaded API data and the generated match model are excluded from Git.
+On a fresh checkout, import data as described below to enable predictions. Until then, the website displays a setup message. Once imported, all five leagues work locally without further API calls. Downloaded API data and the generated match model are excluded from Git.
 
 ## Import data from API-Football
 
@@ -121,12 +121,6 @@ The evaluation used **3,672 training matches** and **921 validation matches**. T
 
 Top-scorer and goalkeeper information is not fetched by the new importer, so these fields display a dash. This avoids extra API requests.
 
-### Legacy Serie A data
-
-The original season-strength model remains available as a fallback before match data is imported. Its reversed season labels were corrected to match the source order in the scraping notebook: 2025, 2024, 2023, 2022, and 2021.
-
-The original CSV is preserved as `data/serie_a_full_data.original.csv`. These season tables are not mixed into the new match model's training data.
-
 ## Tests
 
 Run from the repository root:
@@ -144,16 +138,18 @@ Tests run without network access or API quota usage. They cover feature timing, 
 .
 ├── README.md
 ├── start.sh                       # Start the local server
+├── docs/original-project/         # Original report and demo archive
 └── Footballanalyzer-master/
     ├── api/                       # FastAPI routes and local model serving
     ├── frontend/                  # HTML, CSS, and JavaScript interface
     ├── ml/                        # Feature generation and match-model training
-    ├── data/                      # Legacy data and cached API responses
-    ├── models/                    # Legacy model and generated match-model bundle
+    ├── data/                      # Cached API responses and quota tracking
+    ├── models/                    # Generated match-model bundle
     ├── tests/                     # Offline tests
     ├── football_config.py         # Supported leagues and local paths
     ├── update_football.py         # Fetch, validate, train, and publish
-    ├── train_strength_model.py    # Legacy season-strength training
     ├── requirements.txt
     └── .env.example               # API key configuration template
 ```
+
+The original school-project report and demo archive are preserved under `docs/original-project/`. They are not used by the application.

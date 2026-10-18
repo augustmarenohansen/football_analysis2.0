@@ -104,11 +104,17 @@ class ClientTest(unittest.TestCase):
                     client.get('fixtures', dict(league=135, season=2026))
                 self.assertEqual(network.call_count, 1)
 
-
-if __name__ == '__main__':
-    unittest.main()
-
 class ServingTest(unittest.TestCase):
+    def test_fresh_install_reports_missing_data_without_legacy_files(self):
+        from api import matches as service
+        from fastapi import HTTPException
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(service, 'BUNDLE', Path(directory) / 'missing.joblib'):
+                self.assertTrue(all(not league['ready'] for league in service.catalog()['leagues']))
+                with self.assertRaises(HTTPException) as error:
+                    service.teams(135)
+                self.assertEqual(error.exception.status_code, 409)
+
     def test_catalog_and_predictions_are_league_scoped(self):
         from api import matches as service
         from fastapi import HTTPException
@@ -127,3 +133,7 @@ class ServingTest(unittest.TestCase):
                     service.compare(service.Match(home_team='A', away_team='A', league=135))
                 with self.assertRaises(HTTPException):
                     service.teams(39)
+
+
+if __name__ == '__main__':
+    unittest.main()

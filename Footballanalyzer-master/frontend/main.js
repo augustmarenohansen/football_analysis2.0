@@ -1,5 +1,5 @@
 
-let API_BASE_URL = '/api';
+const API_BASE_URL = '/api/football';
 let league = 135;
 let selectionVersion = 0;
 const leagueSelect = document.getElementById('league-select');
@@ -16,11 +16,17 @@ async function initialize() {
     for (const entry of catalog.leagues) {
       const option = document.createElement('option');
       option.value = entry.id;
-      option.textContent = entry.name + (entry.ready ? '' : entry.id === 135 ? ' — original dataset' : ' — awaiting import');
-      option.disabled = !entry.ready && entry.id !== 135;
+      option.textContent = entry.name + (entry.ready ? '' : ' — awaiting import');
+      option.disabled = !entry.ready;
       leagueSelect.append(option);
     }
-    leagueSelect.value = '135';
+    const available = catalog.leagues.filter(entry => entry.ready);
+    if (!available.length) {
+      leagueSelect.disabled = true;
+      dataStatus.textContent = 'No match data yet. Import data using the setup instructions in README.md, then refresh this page.';
+      return;
+    }
+    leagueSelect.value = String(available.find(entry => entry.id === 135)?.id ?? available[0].id);
     await changeLeague();
   } catch (error) {
     dataStatus.textContent = error.message;
@@ -31,7 +37,6 @@ async function changeLeague() {
   selectionVersion++;
   league = Number(leagueSelect.value);
   const entry = catalog.leagues.find(item => item.id === league);
-  API_BASE_URL = entry.ready ? '/api/football' : '/api';
   for (const controller of Object.values(controllers)) controller?.abort();
   teamStatsCache.clear();
   homeTeamSelect.replaceChildren();
@@ -46,8 +51,6 @@ async function changeLeague() {
     if (catalog.metrics.log_loss >= catalog.metrics.baseline_log_loss) {
       dataStatus.textContent += ' Validation: this model did not outperform the simple baseline.';
     }
-  } else {
-    dataStatus.textContent = 'Original Serie A data, season 2025/2026. API-Football import and new match model are not active yet.';
   }
   await loadTeams();
 }

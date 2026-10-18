@@ -1,5 +1,4 @@
 """Local-only serving of cached match models. No upstream calls in web requests."""
-from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import joblib
