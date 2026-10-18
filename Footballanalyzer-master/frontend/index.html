@@ -50,6 +50,20 @@
   </div>
 
 
+  <fieldset class="odds-inputs">
+    <legend>Compare odds (optional)</legend>
+    <p>Historical simulation · 90-minute match result</p>
+    <label for="odds-outcome">Outcome</label>
+    <select id="odds-outcome" class="team-select">
+      <option value="home">Home win</option>
+      <option value="draw">Draw</option>
+      <option value="away">Away win</option>
+    </select>
+    <label for="decimal-odds">Decimal odds</label>
+    <input id="decimal-odds" type="number" min="1" step="any" inputmode="decimal" placeholder="e.g. 2.20" aria-describedby="odds-help">
+    <p id="odds-help">Leave blank for a match prediction only. Use odds greater than 1.</p>
+  </fieldset>
+  <div id="odds-result" class="odds-result" role="status" hidden></div>
   <button id="predict-btn" class="predict-btn" disabled>Predict</button>
 </div>
 

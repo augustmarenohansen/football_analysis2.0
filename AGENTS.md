@@ -93,6 +93,22 @@ Keep league boundaries explicit: a selected team must belong to the selected lea
 
 When changing asynchronous UI behavior, ensure a delayed response cannot overwrite a newer league/team selection. Keep visible explanations focused on season, freshness, and prediction limitations. Do not invent values for unavailable statistics.
 
+## Odds-assessment feature
+
+The user has requested a future feature that accepts bookmaker odds for a selected team/outcome and assesses potential betting value against the model's independent match probabilities. The detailed requirements are E16 in `PLAN_FORWARD.md`. Manual odds and historical-simulation calculations are implemented in `api/odds.py` and the prediction form. Current-fixture assessment, quote-time validation, and calibrated decision thresholds remain planned. Do not describe the simulation as a current-bet recommendation or implement extensions during documentation-only tasks.
+
+When implementing it:
+
+- Start with manually entered decimal odds for a specified fixture and 90-minute home/draw/away market. Validate finite odds greater than 1, the selected outcome, kickoff, and quote time. Do not silently interpret qualification, extra-time, handicap, or other markets as match-winner odds.
+- Keep model probabilities independent of entered odds. Changing a price must not change the underlying match forecast.
+- Show break-even probability `1 / odds`, model-implied fair odds `1 / probability`, edge in percentage points, and expected net return per unit `probability * odds - 1`. Handle zero probability explicitly. State the standard win/lose, no-fees assumption.
+- Do not infer the bookmaker's full margin from one price. If all three matching prices are available, any proportional margin removal must be labeled an approximation; expected return still uses the actual offered odds.
+- Use potential-value/no-positive-value/insufficient-evidence states. Validate the uncertainty buffer on development data rather than treating every positive point estimate as a favorable assessment.
+- Require fresh, fixture-appropriate data and calibration evidence before assessing current bets. Historical data may support a labeled simulation, not an endorsement of a current-season bet.
+- Explain that this assesses estimated value, not personal affordability or guaranteed profit. Do not call a bet safe or risk-free. Stake sizing and automated betting are outside the requested scope.
+- Add focused tests for calculations, outcome mapping, unchanged probabilities when prices change, invalid input, and stale/mismatched data. Any backtest must align odds and features with the same prediction time and report uncertainty as well as returns.
+- Manual input must not consume external API quota. Automatic odds feeds are a separate feature decision.
+
 ## Verification and completion
 
 For application changes, run the relevant offline tests; run the full existing suite for shared API, feature-generation, or training changes. Add focused regression tests for changed behavior, especially leakage prevention, quotas, and league isolation. Documentation-only changes do not require model training or network tests.

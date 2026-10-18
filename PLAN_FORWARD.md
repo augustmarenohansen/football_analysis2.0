@@ -1,7 +1,7 @@
 # Football Analyzer — Plan Forward
 
 Updated: **18 October 2026**  
-Status: **Research and proposed experiments; not implemented**
+Status: **Model experiments proposed; E16 historical odds simulation implemented**
 
 This is our working roadmap for improving predictions across Premier League, La Liga, Serie A, Bundesliga, and Ligue 1. Add ideas, record experiments, and keep unsuccessful results here too. This document does not authorize purchases or scheduled API jobs.
 
@@ -81,6 +81,7 @@ Priority: **P0 = foundation**, **P1 = next experiments**, **P2 = later**, **P3 =
 | E13 | P2 | Shots and expected goals: test whether chance quality adds predictive information | New coverage audit and potentially many requests | Large | Research needed |
 | E14 | P3 | Injuries, line-ups and player strength: capture squad changes | Timestamped historical data and additional requests | Large | Deferred |
 | E15 | P3 | Neural networks and season simulations | More evidence/data first | Large | Deferred |
+| E16 | P1 | User-entered odds assessment: compare the offered price with our independent match probabilities | Manual odds entry; 0 API calls | Medium | Historical simulation implemented; current-fixture assessment pending |
 
 ## 4. Evaluation before model complexity
 
@@ -178,6 +179,51 @@ For shots/xG, first audit a small, explicitly budgeted sample for availability, 
 
 Defer injuries and line-ups until historical availability at prediction time can be reconstructed. Today's injury information cannot be pasted into a historical backtest.
 
+## Planned product feature — E16: Compare bookmaker odds with our prediction
+
+**User requirement:** the application should accept odds for a selected team to win and assess whether the offered price represents potential betting value according to the model's own match prediction. A first version now supports manual decimal odds and historical simulation calculations. It does not provide current-bet recommendations. Fixture matching, quote timestamps, and calibrated decision thresholds remain pending.
+
+### Input and workflow
+
+1. Select the league, home team, away team, and a specific fixture/kickoff.
+2. Select the outcome being priced: home win, draw, or away win. Initially support only the standard 90-minute three-way market, including stoppage time and excluding extra time and penalties.
+3. Enter **decimal odds** for that outcome. Accept only finite numbers greater than 1. Optionally enter all three prices from the same bookmaker/market and record the quote time.
+4. Generate the model's probabilities independently of the entered odds. Changing the price must change the value assessment, not the model's prediction of the match.
+5. Show the offered odds, model probability, break-even probability, model-implied fair odds, estimated edge, estimated expected return, and a short assessment with reasons.
+
+Manual input requires no API-Football requests. Automatic odds retrieval is a separate future decision.
+
+### Calculations
+
+For decimal odds `d` and the model probability `p` of the selected outcome:
+
+- **Break-even probability:** `1 / d`.
+- **Model-implied fair odds:** `1 / p`; show an explicit unavailable/infinite state when `p = 0`.
+- **Probability edge:** `p - 1 / d`, displayed in percentage points.
+- **Expected net return per unit staked:** `p * d - 1`, assuming a standard win/lose bet with no fees or taxes. This is a model estimate, not realized profit.
+
+Synthetic illustration only: if `p = 0.50` and offered odds are `2.20`, break-even probability is about `45.45%`, fair odds are `2.00`, edge is about `4.55` percentage points, and estimated net return is `0.10` per unit staked. A positive estimate still allows the entire stake to be lost on that match.
+
+A single price is sufficient to calculate break-even probability and expected return. It is **not** sufficient to estimate the bookmaker's total margin. If all three prices are supplied, show their implied-probability sum and optionally a proportional margin-adjusted comparison: `(1 / d_i) / sum(1 / d_j)`. Label this as an approximation. Use the actual offered price, not the normalized probability, for expected-return calculations.
+
+### Assessment and limits
+
+Use clear states such as **Potential value**, **No positive estimated value**, and **Insufficient evidence**. A positive point estimate alone should not automatically trigger a favorable assessment: define and validate an uncertainty/edge buffer using development data before release. Keep its value configurable and document how it was chosen; do not invent a universal threshold.
+
+Require compatible fixture, market, quote time, adequate team history, and sufficiently fresh data. Until newer data and fixture-aware serving exist, offer only clearly marked historical/simulation comparisons; do not use 2024/25 team statistics to endorse a current-season bet. Where calibration or data quality is inadequate, return insufficient evidence and explain why.
+
+The output assesses **estimated price value**, not whether gambling is personally affordable or responsible for a user. Do not label a bet safe, guaranteed, or risk-free. Stake sizing, deposits, bookmaker links, and automated bet placement are outside this feature's scope.
+
+### Dependencies and acceptance checks
+
+- E01: chronological evaluation and leakage checks.
+- E02 and fixture-aware serving: current data for current fixtures.
+- E10: calibration assessment; apply recalibration only if it improves held-out results.
+- Test home/draw/away mapping, invalid odds, zero-probability handling, positive/zero/negative expected return, percentage-point formatting, and incomplete three-price input.
+- Verify that editing odds never changes model probabilities and that stale, mismatched, or unsupported markets cannot receive a favorable assessment.
+- Backtest using predictions and odds genuinely available at the same pre-match time. Evaluate probability quality and realized fixed-unit returns with sample sizes and uncertainty. Include all qualifying selections under a rule fixed before the test, rather than selecting profitable examples afterward.
+- Record results as E16 in the experiment log. Historical returns are evidence to evaluate, not a promise of future profit.
+
 ## 7. Suggested delivery sequence
 
 | Stage | Work | Reviewable output / exit condition |
@@ -187,6 +233,7 @@ Defer injuries and line-ups until historical availability at prediction time can
 | C — Compare model families | E08–E09 | Logistic, Elo-enhanced, score-based, and boosted-tree models evaluated on the same windows |
 | D — Improve probabilities | E10–E11 | Reliability plots and ensemble comparison; approve only a measured gain |
 | E — Make it current | Validated E02 source and fixture/date-aware serving | Predictions tied to an actual fixture, kickoff, source age, and model version |
+| E2 — Assess offered odds | E16 after evaluation, freshness, and calibration checks | Manual odds comparison with transparent calculations, uncertainty, and insufficient-evidence handling |
 | F — Expand selectively | E12–E15 | Small pilots with measured benefit per data/API cost |
 
 Data-source investigation can proceed alongside Stage A. Do not postpone fixing the freshness gap until after every modeling experiment.
@@ -204,6 +251,7 @@ No new performance plots have been generated for this planning task.
 - Accuracy/log loss versus training-history length.
 - Coverage and error by games played, including promoted clubs.
 - Data freshness and missing-feature coverage by league/season.
+- E16: model versus break-even probabilities, and estimated versus realized returns by predeclared edge band with sample counts.
 
 ## 9. Living experiment log
 
@@ -213,6 +261,7 @@ Keep the baseline row fixed. Add one row for every attempted experiment, includi
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | B00 | 2026-10-16 | Current baseline | 2022–2024 starting years; validation from 2025-01-04 | Existing logistic model | 1.0013 | 51.25% | 921 validation matches; five leagues | Reference only |
 | — | — | E04: pre-match Elo | To define in E01 | Not run | — | — | — | Proposed |
+| — | — | E16: user-entered odds | Timestamp-matched fixtures and odds required | Not run | — | — | No current-season endorsement with stale data | Requested; planned |
 
 ### New idea template
 
@@ -238,4 +287,4 @@ Keep the baseline row fixed. Add one row for every attempted experiment, includi
 - After evidence accumulates, should we keep one pooled model or use league-specific calibration/models?
 - When should a candidate replace the active model, and who reviews the report?
 
-All experiments above remain proposals. No source code, installed model, API credentials, or live data was changed as part of creating this document.
+Model experiments remain proposals unless marked otherwise. E16 now has a historical-simulation implementation; current-fixture assessment and its validation remain pending. The odds feature does not retrain or replace the match model.

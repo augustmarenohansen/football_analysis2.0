@@ -4,6 +4,7 @@ from pydantic import BaseModel
 import joblib
 from football_config import BUNDLE, LEAGUES
 from ml.matches import features
+from api.odds import OddsInput, assess_odds
 
 router = APIRouter()
 _cached = None
@@ -71,6 +72,7 @@ class Match(BaseModel):
     home_team: str
     away_team: str
     league: int
+    odds: OddsInput | None = None
 
 
 @router.post('/api/football/compare')
@@ -89,8 +91,12 @@ def compare(match: Match):
                          'goals_per_game': round(team['gf'] / n, 2),
                          'defense_rating': round(1 / (team['ga'] / n + 1), 2)}}
     labels = {'home': 'Home Win', 'away': 'Away Win', 'draw': 'Draw'}
-    return {'home_win': float(probabilities['home']), 'draw': float(probabilities['draw']),
+    result = {'home_win': float(probabilities['home']), 'draw': float(probabilities['draw']),
             'away_win': float(probabilities['away']), 'prediction': labels[max(probabilities, key=probabilities.get)],
             'details': {'model': 'Match-result model (historical data)', 'home_team': details(home),
                         'away_team': details(away), 'season': data['seasons'][match.league],
                         'metrics': data['metrics']}}
+
+    if match.odds is not None:
+        result['odds_assessment'] = assess_odds(match.odds, probabilities, data['seasons'][match.league])
+    return result

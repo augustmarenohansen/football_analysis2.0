@@ -133,3 +133,11 @@ h1 {
         order: 3;
     }
 }
+.odds-inputs { border: 1px solid var(--border-color); border-radius: 8px; margin-top: 20px; text-align: left; min-width: 0; }
+.odds-inputs label { display: block; margin-bottom: 6px; }
+.odds-inputs input { box-sizing: border-box; width: 100%; padding: 10px; font: inherit; border: 1px solid var(--border-color); border-radius: 4px; }
+.odds-inputs p, .odds-result p { font-size: .88rem; line-height: 1.5; }
+.odds-result { text-align: left; background: #fff8e1; padding: 16px; border-radius: 8px; margin-top: 16px; }
+.odds-result dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.odds-result dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.prediction-section { min-width: 0; max-width: 420px; }

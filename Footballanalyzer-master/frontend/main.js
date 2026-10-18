@@ -34,7 +34,7 @@ async function initialize() {
 }
 
 async function changeLeague() {
-  selectionVersion++;
+  invalidatePrediction();
   league = Number(leagueSelect.value);
   const entry = catalog.leagues.find(item => item.id === league);
   for (const controller of Object.values(controllers)) controller?.abort();
@@ -61,6 +61,66 @@ const homeTeamSelect = document.getElementById('home-team');
 const awayTeamSelect = document.getElementById('away-team');
 const predictionResult = document.getElementById('prediction-result');
 const predictBtn = document.getElementById('predict-btn');
+const oddsInput = document.getElementById('decimal-odds');
+const oddsOutcome = document.getElementById('odds-outcome');
+const oddsResult = document.getElementById('odds-result');
+let predicting = false;
+
+function invalidatePrediction() {
+  oddsInput.setCustomValidity('');
+  selectionVersion++;
+  predicting = false;
+  predictBtn.textContent = 'Predict';
+  predictionResult.textContent = 'Select both teams and press Predict';
+  oddsResult.replaceChildren();
+  oddsResult.hidden = true;
+  updatePredictBtnState();
+}
+
+function renderOdds(assessment) {
+  oddsResult.replaceChildren();
+  oddsResult.hidden = false;
+  const title = document.createElement('h3');
+  title.textContent = 'Odds comparison · Historical simulation';
+  oddsResult.append(title);
+  const pct = value => `${(value * 100).toFixed(2)}%`;
+  const selected = assessment.outcome === 'home' ? `${homeTeamSelect.value} to win` :
+    assessment.outcome === 'away' ? `${awayTeamSelect.value} to win` : 'Draw';
+  const rows = [
+    ['Outcome', selected],
+    ['Data season', `${assessment.season}/${assessment.season + 1}`],
+    ['Offered decimal odds', String(assessment.decimal_odds)],
+    ['Model probability', pct(assessment.model_probability)],
+    ['Break-even probability', pct(assessment.break_even_probability)],
+    ['Model fair odds', assessment.fair_odds === null ? 'Infinite (zero model probability)' : assessment.fair_odds.toFixed(2)],
+    ['Estimated edge', `${assessment.edge_percentage_points.toFixed(2)} percentage points`],
+    ['Expected net return per 1 unit', assessment.expected_net_return_per_unit.toFixed(3)],
+    ['Estimated return', pct(assessment.expected_net_return_per_unit)],
+  ];
+  const list = document.createElement('dl');
+  for (const [label, value] of rows) {
+    const term = document.createElement('dt');
+    const detail = document.createElement('dd');
+    term.textContent = label;
+    detail.textContent = value;
+    list.append(term, detail);
+  }
+  oddsResult.append(list);
+  for (const message of [
+    `Simulation: ${{positive: 'positive estimated value', negative: 'no positive estimated value', break_even: 'break-even'}[assessment.simulation_result]}.`,
+    'Current bet assessment: insufficient evidence.',
+    assessment.reason,
+    assessment.assumptions,
+    'Estimated value is not guaranteed profit or a judgment of personal affordability. A losing bet loses the full stake.',
+  ]) {
+    const paragraph = document.createElement('p');
+    paragraph.textContent = message;
+    oddsResult.append(paragraph);
+  }
+}
+
+oddsInput.addEventListener('input', invalidatePrediction);
+oddsOutcome.addEventListener('change', invalidatePrediction);
 
 
 const teamStatsCache = new Map();
@@ -74,12 +134,12 @@ function prettyLabel(v) {
 
 // LOAD TEAMS
 async function loadTeams() {
-  const version = selectionVersion;
+  const requestedLeague = league;
   try {
     const res = await fetch(apiUrl('/teams'));
     if (!res.ok) throw new Error(`Failed to load teams (${res.status})`);
     const data = await res.json();
-    if (version !== selectionVersion) return;
+    if (requestedLeague !== league) return;
     const teams = Array.isArray(data) ? data : data?.teams;
     if (!Array.isArray(teams)) throw new Error('Invalid teams data format');
 
@@ -105,7 +165,7 @@ async function loadTeams() {
 
 //  LOAD STATS 
 async function loadTeamStats(team, prefix) {
-  const version = selectionVersion;
+  const statsLeague = league;
   try {
     if (teamStatsCache.has(team)) {
       updateStatsDisplay(teamStatsCache.get(team), prefix);
@@ -119,15 +179,15 @@ async function loadTeamStats(team, prefix) {
     });
     if (!res.ok) {
       const body = await safeJson(res);
-      throw new Error(body?.detail || `HTTP ${res.status}`);
+      throw new Error(typeof body?.detail === 'string' ? body.detail : `Invalid request (${res.status})`);
     }
     const stats = await res.json();
-    if (version !== selectionVersion || (prefix === 'home' ? homeTeamSelect : awayTeamSelect).value !== team) return;
+    if (statsLeague !== league || (prefix === 'home' ? homeTeamSelect : awayTeamSelect).value !== team) return;
     teamStatsCache.set(team, stats);
     updateStatsDisplay(stats, prefix);
     return stats;
   } catch (err) {
-    if (version === selectionVersion && err.name !== 'AbortError') {
+    if (statsLeague === league && err.name !== 'AbortError') {
       console.error(`Failed to load ${team} stats:`, err);
       clearStatsDisplay(prefix);
     }
@@ -170,18 +230,30 @@ async function compareTeams() {
       return;
     }
 
+    let odds;
+    if (oddsInput.value !== '' || oddsInput.validity.badInput) {
+      if (!oddsInput.reportValidity()) return;
+      const decimal = Number(oddsInput.value);
+      if (!Number.isFinite(decimal) || decimal <= 1) {
+        oddsInput.setCustomValidity('Enter valid decimal odds greater than 1.');
+        oddsInput.reportValidity();
+        return;
+      }
+      odds = { outcome: oddsOutcome.value, decimal };
+    }
+    predicting = true;
     predictBtn.disabled = true;
     predictBtn.textContent = 'Predicting...';
 
     const res = await fetch(apiUrl('/compare'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, league })
+      body: JSON.stringify({ home_team: homeTeam, away_team: awayTeam, league, odds })
     });
 
     if (!res.ok) {
       const body = await safeJson(res);
-      throw new Error(body?.detail || `HTTP ${res.status}`);
+      throw new Error(typeof body?.detail === 'string' ? body.detail : `Invalid request (${res.status})`);
     }
 
     const result = await res.json();
@@ -190,6 +262,7 @@ async function compareTeams() {
     const drawProb = (result.draw * 100).toFixed(1);
     const awayProb = (result.away_win * 100).toFixed(1);
 
+    if (result.odds_assessment) renderOdds(result.odds_assessment);
     predictionResult.innerHTML = `
       <p><strong>Model:</strong> ${result.details.model}</p>
       <h3>${result.prediction}</h3>
@@ -213,8 +286,11 @@ async function compareTeams() {
     console.error('Prediction error:', err);
     if (version === selectionVersion) predictionResult.textContent = `Error: ${err.message}`;
   } finally {
-    updatePredictBtnState();
-    predictBtn.textContent = 'Predict';
+    if (version === selectionVersion) {
+      predicting = false;
+      updatePredictBtnState();
+      predictBtn.textContent = 'Predict';
+    }
   }
 }
 
@@ -222,17 +298,19 @@ async function compareTeams() {
 function updatePredictBtnState() {
   const home = homeTeamSelect.value;
   const away = awayTeamSelect.value;
-  predictBtn.disabled = !(home && away && home !== away);
+  predictBtn.disabled = predicting || !(home && away && home !== away);
 }
 
 //  EVENT
 homeTeamSelect.addEventListener('change', async (e) => {
+  invalidatePrediction();
   const t = e.target.value;
   if (t) await loadTeamStats(t, 'home'); else clearStatsDisplay('home');
   updatePredictBtnState();
 });
 
 awayTeamSelect.addEventListener('change', async (e) => {
+  invalidatePrediction();
   const t = e.target.value;
   if (t) await loadTeamStats(t, 'away'); else clearStatsDisplay('away');
   updatePredictBtnState();

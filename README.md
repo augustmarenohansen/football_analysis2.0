@@ -121,6 +121,28 @@ The evaluation used **3,672 training matches** and **921 validation matches**. T
 
 Top-scorer and goalkeeper information is not fetched by the new importer, so these fields display a dash. This avoids extra API requests.
 
+## Optional odds comparison
+
+Select two teams, choose home win/draw/away win under **Compare odds**, enter decimal
+odds greater than 1 (for example `2.20`), then press **Predict**. Leave odds blank for
+an ordinary match prediction.
+
+The comparison shows model probability, break-even probability, model-implied fair
+odds, percentage-point edge, and expected net return per unit. Prices do not affect
+the match model. This uses manual input and consumes no API-Football requests.
+
+This first version is a **historical simulation**, using the displayed season's
+stored team statistics. It does not select an actual dated fixture or validate a
+bookmaker quote. Current-bet assessment therefore always says **insufficient
+evidence**, even if the mathematical estimate is positive. Current-fixture
+assessment requires fresh data and validated calibration/uncertainty handling.
+
+Only the 90-minute three-way outcome market is supported (including stoppage time,
+excluding extra time and penalties). Calculations assume a standard win/lose bet
+with no fees or taxes. A single price does not reveal the bookmaker's full margin.
+Expected return is an estimate, not guaranteed profit or a personal affordability
+assessment. No stake sizing or bet placement is provided.
+
 ## Tests
 
 Run from the repository root:
