@@ -42,9 +42,25 @@ sh start.sh
 
 Replace `python3.10` with your installed compatible Python version if necessary. Dependencies use scikit-learn 1.7.2 for model training and loading.
 
-On a fresh checkout, import data as described below to enable predictions. Until then, the website displays a setup message. Once imported, all five leagues work locally without further API calls. Downloaded API data and the generated match model are excluded from Git.
+On first league selection, the application downloads current and previous-season results and trains the model. Network access is required on league selection and before each prediction. The first load can take a few seconds.
 
-## Import data from API-Football
+## Current-season predictions
+
+The default source is [Football-Data.co.uk](https://football-data.co.uk/downloadm.php). It provides published results for all five leagues without consuming API-Football quota or requiring a key. Selecting a league refreshes its current-season results and team list; pressing **Predict** makes another request before calculating. Previous-season results are retained locally. Unchanged results reuse the trained model. Changed results trigger chronological training and atomic publication of a consistent model and team snapshot.
+
+The two-season window means **current season plus previous season**: currently 2026/27 and 2025/26. Each team's current-season per-match statistics and last-five form contribute **70%**, with **30%** from the previous season. These are initial policy weights, not optimized or proven to improve accuracy. Training examples use the same blend from information available before each match. Model fitting gives each eligible match equal sample weight; the 70/30 blend applies to team features.
+
+Current-division membership comes from the current-season results file, with an expected 20 clubs in England, Spain and Italy and 18 in Germany and France. Relegated clubs are excluded from selection. Promoted clubs without previous top-division history use current-season data only and need five completed games. Returning clubs need five games in total across the two seasons. Before the first current-season results establish the full roster, the application reports unavailable data rather than showing last year's division.
+
+Season rollover is July 1 for these five leagues. The interface separately shows **last checked** and **latest result date**. The source publishes batches, not a live feed: a successful check today does not mean every match played today is already included. Since the source's time zone is not guaranteed, results become usable at 04:00 UTC on the day after the match date. This conservative rule applies to training and serving.
+
+If the current download or validation fails, prediction stops with a visible error; the previous snapshot is retained but is not silently used to make a new prediction. The active model is `models/current_bundle.joblib`; the earlier API-Football model remains preserved separately. To preload all leagues, run from `Footballanalyzer-master/`:
+
+```sh
+.venv/bin/python current_data.py
+```
+
+## Optional historical import from API-Football
 
 1. Find your API key under **Account → My Access** in the [API-Football dashboard](https://dashboard.api-football.com/).
 2. Create or edit `Footballanalyzer-master/.env` and add:
@@ -68,7 +84,7 @@ The default import checks seasons **2022–2026** for all five leagues. API-Foot
 
 The account used for the import on **16 October 2026** allowed seasons **2022/2023, 2023/2024, and 2024/2025**. The free plan rejected 2025/2026 and 2026/2027. Availability depends on the account and provider; current-season access is not guaranteed.
 
-The website displays the actual season and download timestamp. Predictions use historical team statistics, not live data or current line-ups. A recent download date does not mean the underlying season is current.
+This optional importer writes the separate historical bundle. It does not replace the current-season model used by the website.
 
 ### Request limits and caching
 
@@ -81,7 +97,7 @@ The integration is designed around the account's **100 requests per day** allowa
 - The importer reads the provider's remaining-quota header. Requests made through the dashboard or other applications between imports cannot be tracked locally.
 - Browsing teams and generating predictions use **zero API-Football requests**.
 
-Updates run manually; no scheduled background import is enabled.
+API-Football imports run manually; no scheduled background import is enabled. Current results refresh on demand through Football-Data.
 
 To import only the seasons confirmed accessible during the initial setup:
 
@@ -98,17 +114,17 @@ For a fresh setup limited to selected leagues:
 
 Once a model is active, subsequent imports must include all its leagues and at least their latest imported season. The importer refuses to remove leagues or downgrade seasons. Include the historical seasons as well to retain the same training coverage.
 
-A successful import publishes the model and team data together. The running server picks up the new snapshot automatically; refresh the webpage to update its league list and status. If an import fails, the existing model remains active.
+A successful historical import publishes its model and team data together in `match_bundle.joblib`. The website uses the separate `current_bundle.joblib`. If an import fails, the existing bundle is preserved.
 
 ## How the model works
 
 The new model is a logistic regression classifier trained on actual **home win / draw / away win** outcomes. Features include league identity, games played, goals scored and conceded, goal difference, points, win/draw rates, and form over the last five matches.
 
-For each training match, team statistics are calculated from earlier matches in the same season. Results become available to subsequent examples only after a conservative four-hour interval from kickoff. At least five completed matches per team are required. Final season tables are not used as inputs for earlier matches.
+For each training match, team statistics come from earlier available results and, where present, the previous season. The current source uses the conservative next-day availability rule described above. Final season tables are never used as inputs for earlier matches.
 
 Evaluation uses a chronological split: approximately the earliest 80% of eligible matches for training and the latest 20% for validation, with a time buffer at the split. Accuracy and log loss are compared against a baseline using training-set outcome frequencies. The published model is then refitted on all eligible matches.
 
-### Latest local validation
+### Preserved historical baseline
 
 The import on **16 October 2026** downloaded **5,341 fixture records** across 15 league-seasons. After excluding play-offs and applying the feature-history requirements:
 
@@ -117,7 +133,7 @@ The import on **16 October 2026** downloaded **5,341 fixture records** across 15
 | Validation accuracy | 51.2% | 40.9% |
 | Validation log loss (lower is better) | 1.001 | 1.082 |
 
-The evaluation used **3,672 training matches** and **921 validation matches**. These are historical validation results, not a guarantee of future prediction accuracy. The current metrics are available in the import output and at `/api/catalog`.
+The evaluation used **3,672 training matches** and **921 validation matches**. These are historical validation results, not a guarantee of future prediction accuracy. The active two-season model metrics are available at `/api/catalog`. Its current validation uses a different match set and cannot establish an improvement over this historical baseline.
 
 Top-scorer and goalkeeper information is not fetched by the new importer, so these fields display a dash. This avoids extra API requests.
 
@@ -131,8 +147,8 @@ The comparison shows model probability, break-even probability, model-implied fa
 odds, percentage-point edge, and expected net return per unit. Prices do not affect
 the match model. This uses manual input and consumes no API-Football requests.
 
-This first version is a **historical simulation**, using the displayed season's
-stored team statistics. It does not select an actual dated fixture or validate a
+The odds comparison is a **simulation**, using the displayed two-season
+team statistics. It does not select an actual dated fixture or validate a
 bookmaker quote. Current-bet assessment therefore always says **insufficient
 evidence**, even if the mathematical estimate is positive. Current-fixture
 assessment requires fresh data and validated calibration/uncertainty handling.
@@ -169,6 +185,7 @@ Tests run without network access or API quota usage. They cover feature timing, 
     ├── models/                    # Generated match-model bundle
     ├── tests/                     # Offline tests
     ├── football_config.py         # Supported leagues and local paths
+    ├── current_data.py            # Refresh current results and publish the two-season model
     ├── update_football.py         # Fetch, validate, train, and publish
     ├── requirements.txt
     └── .env.example               # API key configuration template

@@ -22,7 +22,19 @@ def features(home, away, league):
         form = stats["form"][-5:]
         result[f"{prefix}_form"] = sum({"W": 3, "D": 1, "L": 0}[x] for x in form) / max(len(form), 1)
         result[f"{prefix}_played"] = stats["mp"]
+        previous = stats.get('_previous')
+        if previous and previous['mp']:
+            # Blend season rates, so a longer previous season cannot dominate.
+            weight = 0.7 if stats['mp'] else 0.0
+            old = features(previous, previous, league)
+            for key in list(result):
+                if key.startswith(prefix + '_'):
+                    result[key] = weight * result[key] + (1 - weight) * old[key]
     return result
+
+
+def history_games(team):
+    return team['mp'] + team.get('_previous', {}).get('mp', 0)
 
 
 def apply_result(stats, scored, conceded):
@@ -36,7 +48,7 @@ def apply_result(stats, scored, conceded):
     stats["form"].append(outcome)
 
 
-def build_examples(fixtures):
+def build_examples(fixtures, weighted=False):
     states = {}
     examples = []
     seen = set()
@@ -56,11 +68,16 @@ def build_examples(fixtures):
             team = f["teams"][side]
             states.setdefault((league, season, team["id"]), empty_stats(team["name"]))
         # League model predicts regulation-time results; exclude abandoned/awarded games.
-        if f["fixture"]["status"]["short"] != "FT" or f["fixture"]["timestamp"] > now:
+        if f["fixture"]["status"]["short"] != "FT" or f["fixture"]["timestamp"] + 4 * 3600 > now:
             continue
         if any(type(f["goals"][side]) is not int or f["goals"][side] < 0 for side in ("home", "away")):
             raise ValueError(f"Missing/invalid final score: {fid}")
         completed.append(f)
+    if weighted:
+        for (league, season, tid), stats in states.items():
+            previous = states.get((league, season - 1, tid))
+            if previous is not None:
+                stats['_previous'] = previous
     completed.sort(key=lambda f: (f["fixture"]["timestamp"], f["fixture"]["id"]))
     # No game at the same kickoff time can influence another game's features.
     pending = []
@@ -78,7 +95,7 @@ def build_examples(fixtures):
             home = states[(league, season, f["teams"]["home"]["id"])]
             away = states[(league, season, f["teams"]["away"]["id"])]
             hg, ag = f["goals"]["home"], f["goals"]["away"]
-            if min(home["mp"], away["mp"]) >= 5:
+            if min(history_games(home), history_games(away)) >= 5:
                 label = "home" if hg > ag else "away" if ag > hg else "draw"
                 examples.append((timestamp, features(home, away, league), label))
             pending.append((timestamp + 4 * 3600, home, away, hg, ag))
@@ -88,8 +105,8 @@ def build_examples(fixtures):
     return examples, states
 
 
-def fit_bundle(fixtures, sources):
-    examples, states = build_examples(fixtures)
+def fit_bundle(fixtures, sources, weighted=False):
+    examples, states = build_examples(fixtures, weighted=weighted)
     if len(examples) < 200:
         raise ValueError(f"Only {len(examples)} usable matches; at least 200 required. Fetch more seasons.")
     cutoff = examples[int(len(examples) * 0.8)][0]
@@ -121,6 +138,6 @@ def fit_bundle(fixtures, sources):
         latest[league] = max(latest[league], season)
     teams = {league: {str(tid): stats for (lid, year, tid), stats in states.items()
                       if lid == league and year == season} for league, season in latest.items()}
-    return {"version": 1, "model": model, "teams": teams, "seasons": dict(latest),
+    return {"version": 2 if weighted else 1, "model": model, "teams": teams, "seasons": dict(latest),
             "metrics": metrics, "sources": sources, "trained_at": datetime.now(timezone.utc).isoformat(),
             "last_match": datetime.fromtimestamp(examples[-1][0], timezone.utc).isoformat()}

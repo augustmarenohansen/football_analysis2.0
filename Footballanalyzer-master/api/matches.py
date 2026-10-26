@@ -1,9 +1,10 @@
-"""Local-only serving of cached match models. No upstream calls in web requests."""
+"""Current-season predictions after refreshing published results."""
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import joblib
-from football_config import BUNDLE, LEAGUES
-from ml.matches import features
+from football_config import LEAGUES
+from current_data import BUNDLE, refresh_current
+from ml.matches import features, history_games
 from api.odds import OddsInput, assess_odds
 
 router = APIRouter()
@@ -18,7 +19,7 @@ def bundle():
     stamp = BUNDLE.stat().st_mtime_ns
     if stamp != _stamp:
         candidate = joblib.load(BUNDLE)
-        if candidate.get('version') != 1:
+        if candidate.get('version') not in (1, 2):
             raise HTTPException(503, 'Unsupported model format')
         _cached, _stamp = candidate, stamp
     return _cached
@@ -28,13 +29,33 @@ def bundle():
 def catalog():
     data = bundle()
     return {
-        'leagues': [dict(id=lid, name=name, ready=bool(data and lid in data['teams']),
+        'leagues': [dict(id=lid, name=name, ready=bool(data and lid in data['teams']), available=True,
                          season=data['seasons'].get(lid) if data else None) for lid, name in LEAGUES.items()],
         'trained_at': data['trained_at'] if data else None,
         'last_match': data['last_match'] if data else None,
         'metrics': data['metrics'] if data else None,
         'sources': data['sources'] if data else [],
     }
+
+
+def refresh(league):
+    if league not in LEAGUES:
+        raise HTTPException(422, 'Unsupported league')
+    try:
+        return refresh_current(league)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise HTTPException(503, 'Could not verify current results. No prediction was made. '
+                            'The previous snapshot is preserved. Please try again later.') from exc
+
+
+def freshness(data, league):
+    season = data['seasons'][league]
+    source = next((s for s in data.get('sources', [])
+                   if s['league'] == league and s['season'] == season), {})
+    return {'season': season, 'previous_season': season - 1,
+            'checked_at': source.get('fetched_at'), 'last_result': source.get('last_result'),
+            'provider': source.get('provider'), 'weights': data.get('season_weights'),
+            'metrics': data['metrics']}
 
 
 def league_data(league):
@@ -58,8 +79,9 @@ def public_stats(team):
 
 @router.get('/api/football/teams')
 def teams(league: int):
-    _, values = league_data(league)
-    return {'teams': sorted(t['name'] for t in values.values())}
+    data = refresh(league)
+    values = data['teams'][league]
+    return {'teams': sorted(t['name'] for t in values.values()), 'data': freshness(data, league)}
 
 
 @router.get('/api/football/team/{team}')
@@ -77,12 +99,14 @@ class Match(BaseModel):
 
 @router.post('/api/football/compare')
 def compare(match: Match):
-    data, values = league_data(match.league)
     if match.home_team == match.away_team:
         raise HTTPException(422, 'Pick two different teams')
+    data = refresh(match.league)
+    values = data['teams'][match.league]
     home, away = find_team(values, match.home_team), find_team(values, match.away_team)
-    if min(home['mp'], away['mp']) < 5:
-        raise HTTPException(409, 'At least five completed games per team are needed in this season')
+    if min(history_games(home), history_games(away)) < 5:
+        raise HTTPException(409, 'At least five completed games per team across these two seasons are required; '
+                            'promoted teams without previous top-division history need five current-season games')
     model = data['model']
     probabilities = dict(zip(model.classes_, model.predict_proba([features(home, away, match.league)])[0]))
     def details(team):
@@ -93,7 +117,9 @@ def compare(match: Match):
     labels = {'home': 'Home Win', 'away': 'Away Win', 'draw': 'Draw'}
     result = {'home_win': float(probabilities['home']), 'draw': float(probabilities['draw']),
             'away_win': float(probabilities['away']), 'prediction': labels[max(probabilities, key=probabilities.get)],
-            'details': {'model': 'Match-result model (historical data)', 'home_team': details(home),
+            'data': freshness(data, match.league),
+            'team_stats': {'home': public_stats(home), 'away': public_stats(away)},
+            'details': {'model': 'Two-season model · 70% current / 30% previous when both are available', 'home_team': details(home),
                         'away_team': details(away), 'season': data['seasons'][match.league],
                         'metrics': data['metrics']}}
 

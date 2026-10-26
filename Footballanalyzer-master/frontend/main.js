@@ -16,11 +16,11 @@ async function initialize() {
     for (const entry of catalog.leagues) {
       const option = document.createElement('option');
       option.value = entry.id;
-      option.textContent = entry.name + (entry.ready ? '' : ' — awaiting import');
-      option.disabled = !entry.ready;
+      option.textContent = entry.name + (entry.ready ? '' : ' — load current data');
+      option.disabled = !entry.available;
       leagueSelect.append(option);
     }
-    const available = catalog.leagues.filter(entry => entry.ready);
+    const available = catalog.leagues.filter(entry => entry.available);
     if (!available.length) {
       leagueSelect.disabled = true;
       dataStatus.textContent = 'No match data yet. Import data using the setup instructions in README.md, then refresh this page.';
@@ -30,6 +30,14 @@ async function initialize() {
     await changeLeague();
   } catch (error) {
     dataStatus.textContent = error.message;
+  }
+}
+
+
+function showDataStatus(data) {
+  dataStatus.textContent = `${data.season}/${data.season + 1} (70%) + ${data.previous_season}/${data.previous_season + 1} (30%) · Checked ${new Date(data.checked_at * 1000).toLocaleString()} · Latest result: ${data.last_result} · ${data.provider}. Published results may lag behind today's matches. Teams without previous-season data use current-season history only.`;
+  if (data.metrics.log_loss >= data.metrics.baseline_log_loss) {
+    dataStatus.textContent += ' Validation: this model did not outperform the simple baseline.';
   }
 }
 
@@ -45,13 +53,7 @@ async function changeLeague() {
   clearStatsDisplay('away');
   predictBtn.disabled = true;
   predictionResult.textContent = 'Select both teams to see prediction';
-  if (entry.ready) {
-    const source = catalog.sources.find(s => s.league === league && s.season === entry.season);
-    dataStatus.textContent = `${entry.season}/${entry.season + 1} · Downloaded ${new Date(source.fetched_at * 1000).toLocaleString()} · Historical estimate, not live data.`;
-    if (catalog.metrics.log_loss >= catalog.metrics.baseline_log_loss) {
-      dataStatus.textContent += ' Validation: this model did not outperform the simple baseline.';
-    }
-  }
+  dataStatus.textContent = 'Checking current division teams and published results…';
   await loadTeams();
 }
 leagueSelect.addEventListener('change', changeLeague);
@@ -81,7 +83,7 @@ function renderOdds(assessment) {
   oddsResult.replaceChildren();
   oddsResult.hidden = false;
   const title = document.createElement('h3');
-  title.textContent = 'Odds comparison · Historical simulation';
+  title.textContent = 'Odds comparison · Simulation';
   oddsResult.append(title);
   const pct = value => `${(value * 100).toFixed(2)}%`;
   const selected = assessment.outcome === 'home' ? `${homeTeamSelect.value} to win` :
@@ -135,11 +137,16 @@ function prettyLabel(v) {
 // LOAD TEAMS
 async function loadTeams() {
   const requestedLeague = league;
+  const requestedSelection = selectionVersion;
   try {
     const res = await fetch(apiUrl('/teams'));
-    if (!res.ok) throw new Error(`Failed to load teams (${res.status})`);
+    if (!res.ok) {
+      const body = await safeJson(res);
+      throw new Error(body?.detail || `Failed to load teams (${res.status})`);
+    }
     const data = await res.json();
-    if (requestedLeague !== league) return;
+    if (requestedLeague !== league || requestedSelection !== selectionVersion) return;
+    showDataStatus(data.data);
     const teams = Array.isArray(data) ? data : data?.teams;
     if (!Array.isArray(teams)) throw new Error('Invalid teams data format');
 
@@ -159,7 +166,7 @@ async function loadTeams() {
     });
   } catch (error) {
     console.error('Error loading teams:', error);
-    alert('Failed to load teams.');
+    if (requestedLeague === league && requestedSelection === selectionVersion) dataStatus.textContent = error.message;
   }
 }
 
@@ -243,7 +250,9 @@ async function compareTeams() {
     }
     predicting = true;
     predictBtn.disabled = true;
-    predictBtn.textContent = 'Predicting...';
+    predictBtn.textContent = 'Updating data and predicting…';
+    predictionResult.textContent = 'Checking the latest published results…';
+    oddsResult.hidden = true;
 
     const res = await fetch(apiUrl('/compare'), {
       method: 'POST',
@@ -258,6 +267,10 @@ async function compareTeams() {
 
     const result = await res.json();
     if (version !== selectionVersion) return;
+    showDataStatus(result.data);
+    teamStatsCache.clear();
+    updateStatsDisplay(result.team_stats.home, 'home');
+    updateStatsDisplay(result.team_stats.away, 'away');
     const homeProb = (result.home_win * 100).toFixed(1);
     const drawProb = (result.draw * 100).toFixed(1);
     const awayProb = (result.away_win * 100).toFixed(1);

@@ -25,6 +25,6 @@ def assess_odds(quote: OddsInput, probabilities: dict, season: int):
         # Never infer readiness for a current bet from a positive point estimate.
         'assessment': 'insufficient_evidence',
         'mode': quote.mode, 'market': quote.market, 'season': season,
-        'reason': 'Historical team snapshot only. No verified fixture, quote timing, or calibrated uncertainty buffer is available for a current bet.',
+        'reason': 'Team statistics only. No verified fixture, quote timing, or calibrated uncertainty buffer is available for a current bet.',
         'assumptions': '90 minutes plus stoppage time; excludes extra time and penalties. Standard win/lose bet, no fees or taxes. Single-price comparison; bookmaker margin is not estimated.',
     }

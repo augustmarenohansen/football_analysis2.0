@@ -112,7 +112,7 @@ class ServingTest(unittest.TestCase):
             with patch.object(service, 'BUNDLE', Path(directory) / 'missing.joblib'):
                 self.assertTrue(all(not league['ready'] for league in service.catalog()['leagues']))
                 with self.assertRaises(HTTPException) as error:
-                    service.teams(135)
+                    service.league_data(135)
                 self.assertEqual(error.exception.status_code, 409)
 
     def test_catalog_and_predictions_are_league_scoped(self):
@@ -122,7 +122,7 @@ class ServingTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'bundle.joblib'
             joblib.dump(model, path)
-            with patch.object(service, 'BUNDLE', path), patch.object(service, '_stamp', None):
+            with patch.object(service, 'BUNDLE', path), patch.object(service, '_stamp', None), patch.object(service, 'refresh', return_value=model):
                 catalog = service.catalog()
                 self.assertTrue(next(x for x in catalog['leagues'] if x['id'] == 135)['ready'])
                 self.assertFalse(next(x for x in catalog['leagues'] if x['id'] == 39)['ready'])
@@ -132,7 +132,7 @@ class ServingTest(unittest.TestCase):
                 with self.assertRaises(HTTPException):
                     service.compare(service.Match(home_team='A', away_team='A', league=135))
                 with self.assertRaises(HTTPException):
-                    service.teams(39)
+                    service.league_data(39)
 
 
 if __name__ == '__main__':

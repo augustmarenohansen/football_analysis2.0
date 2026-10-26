@@ -1,7 +1,7 @@
 # Football Analyzer — Plan Forward
 
 Updated: **18 October 2026**  
-Status: **Model experiments proposed; E16 historical odds simulation implemented**
+Status: **Current two-season data refresh and 70/30 seasonal features implemented; calibration and fixture matching pending**
 
 This is our working roadmap for improving predictions across Premier League, La Liga, Serie A, Bundesliga, and Ligue 1. Add ideas, record experiments, and keep unsuccessful results here too. This document does not authorize purchases or scheduled API jobs.
 
@@ -13,7 +13,7 @@ Aim for more reliable probabilities, not an arbitrary headline accuracy. No perc
 
 ## 1. Starting point
 
-Verified from the current model bundle and source code during this review:
+Historical baseline recorded before the current-season update (preserved for reference):
 
 | Item | Current state |
 | --- | --- |
@@ -29,7 +29,7 @@ Verified from the current model bundle and source code during this review:
 | Deployment | After evaluation, the model is refitted on all eligible matches |
 | API budget | 100 requests/day; importer reserves 20 and caches responses for 24 hours |
 
-### Gaps found in our implementation
+### Gaps found in the original implementation
 
 - Team state resets each season. We discard useful previous-season information and cannot predict until both teams have played five games.
 - Inputs describe season averages and last-five points, but do not explicitly measure opponent strength, venue-specific form, or rest.
@@ -147,7 +147,7 @@ Only then test a simple weighted average of the best models. Choose weights usin
 
 ### E02 — Investigate a second source before paying for more calls
 
-[Football-Data's download catalog](https://football-data.co.uk/downloadm.php) lists historical CSV archives and 2025/26 and 2026/27 seasons. This is a promising candidate for filling our freshness gap without consuming API-Football calls. It has not been integrated or validated against our data.
+[Football-Data's download catalog](https://football-data.co.uk/downloadm.php) lists historical CSV archives and 2025/26 and 2026/27 seasons. This is a promising candidate for filling our freshness gap without consuming API-Football calls. It is now integrated for the five leagues through `current_data.py`; API-Football records are not mixed into these snapshots. Cross-provider reconciliation remains future work.
 
 Before importing: inspect actual coverage for all five leagues, permitted use, field definitions, missing timestamps, team-name mappings, and duplicate fixtures. Match overlapping seasons against API-Football and retain source provenance. The provider also notes a historical definition change in Serie A shots data; do not merge statistics blindly. [Italy data notes](https://football-data.co.uk/italym.php)
 
@@ -288,3 +288,12 @@ Keep the baseline row fixed. Add one row for every attempted experiment, includi
 - When should a candidate replace the active model, and who reviews the report?
 
 Model experiments remain proposals unless marked otherwise. E16 now has a historical-simulation implementation; current-fixture assessment and its validation remain pending. The odds feature does not retrain or replace the match model.
+
+
+## Implemented: current two-season predictions
+
+The user requested current division teams, current plus previous season, refreshed results before prediction, and more weight on current statistics. Football-Data now supplies the active model because API-Football again denied season 2026 on the free account. Current-season files refresh on league selection and before every prediction; completed previous-season files are retained. Failed refreshes block predictions. The old API bundle is preserved separately.
+
+Features blend season rates and last-five form 70/30. This is a transparent initial policy, not a tuned optimum. Each eligible training match retains equal sample weight. Five total games are required; promoted teams without prior top-division history must accumulate five current-season games. Only the two requested seasons enter training. CSV results use a conservative next-day 04:00 UTC availability rule. Full current-season club counts are checked before publication; early-season incomplete membership is reported as unavailable.
+
+Initial five-league validation: 1,393 training matches, 349 validation matches from 11 May 2026; accuracy 46.70%, log loss 1.0452 versus outcome-frequency baseline 43.84% and 1.0716. These are development metrics on a different fixture set from B00, not evidence of an improvement over B00. Same-fixture ablations of 70/30 versus current-only features, calibration and league breakdowns remain planned. Published-source freshness is shown separately from the time of the request; a same-day query cannot guarantee same-day results.

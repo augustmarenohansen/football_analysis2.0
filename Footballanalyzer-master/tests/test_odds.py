@@ -37,8 +37,8 @@ class OddsTests(unittest.TestCase):
         teams = {'1': empty_stats('A'), '2': empty_stats('B')}
         for team in teams.values():
             team['mp'] = 10
-        data = {'model': Model(), 'seasons': {135: 2024}, 'metrics': {}}
-        with patch('api.matches.league_data', return_value=(data, teams)):
+        data = {'teams': {135: teams}, 'model': Model(), 'seasons': {135: 2024}, 'metrics': {}}
+        with patch('api.matches.refresh', return_value=data):
             plain = compare(Match(home_team='A', away_team='B', league=135))
             self.assertNotIn('odds_assessment', plain)
             for outcome, probability in [('home', .5), ('draw', .3), ('away', .2)]:

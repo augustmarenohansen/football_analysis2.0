@@ -59,7 +59,7 @@ Preserve the active `models/match_bundle.joblib`, downloaded `data/api_football/
 
 The account has a 100-request daily allowance. Existing safeguards include a 35-request per-run default, an 80-request local daily cap, a 20-request reserve, 24-hour response caching, spaced requests, and a single-update lock. Preserve these safeguards. Never reset the quota ledger or bypass caching to make a request succeed.
 
-Website requests must use local data only. Do not call API-Football on page load, league selection, or prediction. Tests must not consume external quota.
+The user explicitly requested a current-data query before prediction. `current_data.py` refreshes Football-Data results on league selection and before every prediction without API-Football quota. Preserve that behavior; fail visibly if refresh fails. Tests must remain offline. Do not add API-Football web calls.
 
 Run imports when the user's task requires data updates, not as a routine test. From the application directory, the importer is:
 
@@ -75,9 +75,9 @@ On 16 October 2026, the account allowed seasons 2022–2024 and rejected 2025–
 
 - Predict three outcomes: home win, draw, and away win. Keep class-to-probability mapping explicit; probabilities must be finite, nonnegative, and sum to one.
 - Build each example only from information available before its prediction time. Never use the target match's result, final season standings, post-match ratings, or today's injury data as historical inputs.
-- Preserve the four-hour availability margin after kickoff unless replacing it with a validated availability policy. Simultaneous or overlapping matches must not leak results into one another.
+- The API importer retains four-hour availability after kickoff; Football-Data uses 04:00 UTC the next day because source time zones are not guaranteed. Simultaneous or overlapping matches must not leak results into one another.
 - Exclude relegation play-offs before accumulating regular-season statistics or collecting league teams. Preserve fixture-ID duplicate checks and score validation.
-- Preserve the five-completed-games requirement until a tested early-season approach replaces it. Account for promoted teams and missing data explicitly.
+- The current two-season model requires five completed games across current and previous seasons. Promoted teams without previous top-division history require five current-season games. Blend season rates 70/30 when both exist; otherwise use the available season. Keep this behavior tested.
 - Keep training, preprocessing, hyperparameter selection, early stopping, and calibration chronological. Do not randomly split fixtures across time.
 - Compare candidate models on the same fixtures and coverage. Report log loss, accuracy, baseline results, and sample counts; include league/class breakdowns when relevant.
 - The existing validation period has already been inspected. Do not present it as an untouched final test. Record experiments and decisions in `PLAN_FORWARD.md`.
@@ -95,7 +95,7 @@ When changing asynchronous UI behavior, ensure a delayed response cannot overwri
 
 ## Odds-assessment feature
 
-The user has requested a future feature that accepts bookmaker odds for a selected team/outcome and assesses potential betting value against the model's independent match probabilities. The detailed requirements are E16 in `PLAN_FORWARD.md`. Manual odds and historical-simulation calculations are implemented in `api/odds.py` and the prediction form. Current-fixture assessment, quote-time validation, and calibrated decision thresholds remain planned. Do not describe the simulation as a current-bet recommendation or implement extensions during documentation-only tasks.
+The user has requested a future feature that accepts bookmaker odds for a selected team/outcome and assesses potential betting value against the model's independent match probabilities. The detailed requirements are E16 in `PLAN_FORWARD.md`. Manual odds and simulation calculations are implemented in `api/odds.py` and the prediction form. Current-fixture assessment, quote-time validation, and calibrated decision thresholds remain planned. Do not describe the simulation as a current-bet recommendation or implement extensions during documentation-only tasks.
 
 When implementing it:
 
