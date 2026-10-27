@@ -116,3 +116,9 @@ For application changes, run the relevant offline tests; run the full existing s
 For API/frontend changes, verify the affected user flow locally. For shared prediction changes, check all five leagues. Use synthetic fixtures only in isolated tests, never as replacement production data.
 
 Before finishing, review the diff for unrelated edits, secrets, generated artifacts, and outdated documentation. Explain what changed, which checks passed, and any unverified limitations. Do not claim improved model quality without an evaluated comparison.
+
+## Premier League round tracker
+
+`pl_rounds.py` implements the user-authorized startup/hourly worker while the app runs, plus manual synchronization. It uses official FPL fixtures and final results for scheduling/evaluation, and the existing Football-Data refresh for training. Never backfill predictions for started matches. Preserve original forecast probabilities, features, timestamps, original kickoff/round and archived model IDs when retraining, rescheduling or correcting results. Keep feedback separate from inclusion in training when source publication differs. No automatic accuracy improvement is promised.
+
+Preserve `data/pl_rounds/history.json` and archived models in `data/pl_rounds/models/`; these hold prospective evidence and are excluded from Git. Tests must mock source access and isolate history/model artifacts in temporary directories. The schedule runs only while the server is up; do not imply the computer wakes itself. The UI is `frontend/rounds.html`, with local report and explicit sync endpoints in `api/main.py`.

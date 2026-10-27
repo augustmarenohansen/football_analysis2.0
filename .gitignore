@@ -7,3 +7,4 @@ data/api_football/
 models/match_bundle.joblib
 Footballanalyzer-master/models/current_bundle.joblib
 Footballanalyzer-master/models/current_bundle.lock
+Footballanalyzer-master/data/pl_rounds/

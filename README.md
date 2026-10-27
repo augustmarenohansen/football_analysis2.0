@@ -192,3 +192,15 @@ Tests run without network access or API quota usage. They cover feature timing, 
 ```
 
 The original school-project report and demo archive are preserved under `docs/original-project/`. They are not used by the application.
+
+## Premier League rounds and learning history
+
+Open [Premier League round tracker](http://localhost:8000/rounds.html) or follow the link on the home page. The application checks the official Fantasy Premier League schedule and results on startup and every hour while the server is running. **Check now** triggers the same workflow manually. The computer must be awake and the server running; this is an application feature, not an operating-system or Codex scheduled task. It uses no API-Football quota.
+
+Each round with a scheduled match in the next seven days receives forecasts for its future, unstarted fixtures. Forecasts are stored once, before kickoff, including home/draw/away probabilities, input features, prediction time, original kickoff and round, source freshness, baseline probabilities, and archived model identity. A postponed fixture retains its original forecast; if its revised kickoff predates forecast creation, it is excluded from evaluation. Fixtures with no confirmed kickoff or insufficient team history remain pending. Games already started when the tracker first runs never receive retrospective forecasts.
+
+After final results arrive and at least four hours have passed since kickoff, the tracker scores the saved probabilities. It shows correct/missed outcomes, probability assigned to the actual outcome, accuracy, log loss, and multiclass Brier score (sum over the three classes), both overall and by round. The outcome-frequency baseline uses only results available when the forecast was saved. Provider result corrections update evaluation without changing original forecasts.
+
+The existing two-season model is refreshed using newly published Football-Data results and retrained when those results change. Both correct and incorrect examples are used, with unchanged 70/30 seasonal features. FPL result feedback may arrive before Football-Data includes the result; the table distinguishes these states. This is periodic supervised retraining, not automatic discovery of new features or guaranteed improvement. Calibration and controlled model-promotion comparisons remain future work. Existing manual odds behavior is unchanged.
+
+History is stored atomically in `Footballanalyzer-master/data/pl_rounds/history.json`; model snapshots are under `data/pl_rounds/models/`. Preserve this directory and back it up to retain genuine prospective evaluation. It is excluded from Git. A file lock prevents concurrent writers. Failed checks preserve existing history and show an error. Endpoints: `GET /api/pl-rounds` (local report), `POST /api/pl-rounds/sync` (network refresh, evaluation, retraining and prospective prediction).

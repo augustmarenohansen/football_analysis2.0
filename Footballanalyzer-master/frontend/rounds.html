@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premier League round tracker</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .table-scroll { overflow-x: auto; margin-top: 20px; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th, td { padding: 12px; border-bottom: 1px solid #ddd; }
+    td { min-width: 110px; }
+    #round-status { white-space: pre-line; }
+  </style>
+</head>
+<body>
+<main class="container">
+  <a href="/">← Match comparison</a>
+  <h1>Premier League round tracker</h1>
+  <p>Forecasts are saved before kickoff and never rewritten after the result. Checks run on startup and hourly while the server is running. No checks run while the computer is asleep.</p>
+  <p>Rounds with matches in the next seven days receive forecasts. Missed kickoffs are marked without inventing past predictions. New published results are used to retrain the model for future matches, including both wins and mistakes.</p>
+  <button id="sync-rounds" class="predict-btn">Check now</button>
+  <p id="round-status" role="status">Loading round history…</p>
+  <h2>Recorded performance</h2>
+  <p id="round-metrics"></p>
+  <p>Log loss penalizes confident errors; lower is better. Brier score is the sum of squared errors over the three outcomes. These measurements start with saved forecasts, not earlier matches. Learning does not guarantee improvement.</p>
+  <label for="round-select">Round</label>
+  <select id="round-select" class="team-select"></select>
+  <p id="selected-metrics"></p>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Match / kickoff</th><th>Home / draw / away</th><th>Saved prediction</th><th>Result</th><th>Feedback</th></tr></thead>
+      <tbody id="round-matches"></tbody>
+    </table>
+  </div>
+  <p>Schedule and round numbers: official Fantasy Premier League feed. Training results: Football-Data.co.uk. The two sources may update at different times; result feedback can appear before training includes it. Round assignments can change after postponements; original forecast details remain stored.</p>
+</main>
+<script src="rounds.js"></script>
+</body>
+</html>
