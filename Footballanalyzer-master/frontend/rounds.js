@@ -19,6 +19,14 @@ function moneySummary(s) {
   return `${s.settled} settled, ${s.pending} pending · Settled stake ${s.stake.toFixed(2)} kr · Payout ${s.payout.toFixed(2)} kr · Net ${s.net.toFixed(2)} kr · Pending stake ${s.pending_stake.toFixed(2)} kr${s.invalid ? ` · ${s.invalid} invalid` : ''}`;
 }
 
+function updateOverview() {
+  document.getElementById('overview-count').textContent = report.metrics.count;
+  document.getElementById('overview-accuracy').textContent = report.metrics.count ? pct(report.metrics.accuracy) : '—';
+  const simulation = report.simulation;
+  document.getElementById('overview-net').textContent = simulation.settled
+    ? `${simulation.net > 0 ? '+' : ''}${simulation.net.toFixed(2)} kr` : '—';
+}
+
 async function submitSimulation(event, match) {
   event.preventDefault();
   if (busy) return;
@@ -35,6 +43,7 @@ async function submitSimulation(event, match) {
     const data = await response.json();
     if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Check all three odds.');
     report = data;
+    updateOverview();
     document.getElementById('simulation-total').textContent = moneySummary(report.simulation);
     renderRound();
   } catch (error) {
@@ -123,6 +132,7 @@ async function predictRound() {
     const result = await response.json();
     if (!response.ok) throw new Error(typeof result.detail === 'string' ? result.detail : 'Could not predict this round.');
     report = result.report;
+    updateOverview();
     document.getElementById('simulation-total').textContent = moneySummary(report.simulation);
     if (selector.value === requestedRound) {
       roundSkips = new Map(result.skipped.map(item => [item.fixture_id, item.reason]));
@@ -173,6 +183,7 @@ async function load(sync = false) {
     const response = await fetch(sync ? '/api/pl-rounds/sync' : '/api/pl-rounds', {method: sync ? 'POST' : 'GET'});
     if (!response.ok) throw new Error('Unable to load round history. Try again later.');
     report = await response.json();
+    updateOverview();
     statusText.textContent = `Last successful check: ${date(report.last_success)} · Model trained: ${date(report.trained_at)}\n${report.error || 'Automatic checks run hourly while the server is running.'}`;
     document.getElementById('round-metrics').textContent = summary(report.metrics);
     document.getElementById('simulation-total').textContent = moneySummary(report.simulation);

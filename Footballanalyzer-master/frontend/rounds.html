@@ -1,51 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Premier League round tracker</title>
-  <link rel="stylesheet" href="styles.css">
-  <style>
-    .table-scroll { overflow-x: auto; margin-top: 20px; }
-    table { width: 100%; border-collapse: collapse; text-align: left; }
-    th, td { padding: 12px; border-bottom: 1px solid #ddd; }
-    td { min-width: 110px; }
-    #round-status { white-space: pre-line; }
-  </style>
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0a0d0b"><title>Round Tracker | Football Analyzer</title><link rel="stylesheet" href="styles.css?v=3"></head>
 <body>
-<main class="container">
-  <a href="/">← Match comparison</a>
-  <h1>Premier League round tracker</h1>
-  <p>Forecasts are saved before kickoff and never rewritten after the result. Checks run on startup and hourly while the server is running. No checks run while the computer is asleep.</p>
-  <p>Rounds with matches in the next seven days receive forecasts. Missed kickoffs are marked without inventing past predictions. New published results are used to retrain the model for future matches, including both wins and mistakes.</p>
-  <button id="sync-rounds" class="predict-btn">Check now</button>
-  <p id="round-status" role="status">Loading round history…</p>
-  <button id="round-notifications" class="predict-btn" type="button">Enable round notifications</button>
-  <p id="notifications-status" role="status">Enable browser notifications to be notified when a round finishes. Keep this page open and the server running.</p>
-  <h2>Recorded performance</h2>
-  <p id="round-metrics"></p>
-  <p>Log loss penalizes confident errors; lower is better. Brier score is the sum of squared errors over the three outcomes. These measurements start with saved forecasts, not earlier matches. Learning does not guarantee improvement.</p>
-  <h2>10 kr per match · simulation</h2>
-  <p>Predict the round using Norsk Tipping odds, or enter odds for individual matches. The model selects the outcome with the highest estimated return and simulates 10 kr per match. No real bets are placed. Odds can change; results do not include fees, taxes, or bookmaker void rules.</p>
-  <p id="simulation-total"></p>
-  <label for="round-select">Round</label>
-  <select id="round-select" class="team-select"></select>
-  <button id="predict-round" class="predict-btn" type="button">Predict round</button>
-  <p id="predict-round-status" role="status">Select a round, then predict all eligible matches.</p>
-  <button id="load-nt-odds" class="predict-btn" type="button">Load Norsk Tipping odds</button>
-  <p id="nt-status" role="status">Load odds for the selected round to see Norsk Tipping names and prefill the forms.</p>
-  <p id="selected-metrics"></p>
-  <p id="selected-simulation"></p>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Match / kickoff</th><th>Home / draw / away</th><th>Saved prediction</th><th>Result</th><th>Feedback</th><th>10 kr simulation</th></tr></thead>
-      <tbody id="round-matches"></tbody>
-    </table>
-  </div>
-  <p>Schedule and round numbers: official Fantasy Premier League feed. Training results: Football-Data.co.uk. The two sources may update at different times; result feedback can appear before training includes it. Round assignments can change after postponements; original forecast details remain stored.</p>
-</main>
-<script src="round_notifications.js"></script>
-<script src="rounds.js"></script>
+<button id="menu-toggle" class="menu-toggle" type="button" aria-controls="sidebar" aria-expanded="true" aria-label="Hide menu" hidden>☰</button>
+<div class="app-shell">
+  <aside id="sidebar" class="sidebar">
+    <div class="brand"><span class="brand-icon" aria-hidden="true">⚽</span><span>FOOTBALL<span class="brand-accent">.</span><small>ANALYZER</small></span></div>
+    <div class="nav-label">WORKSPACE</div>
+    <nav class="navigation" aria-label="Main navigation"><a class="nav-item" href="/?v=3"><span aria-hidden="true">⚽</span> Match analysis</a><a class="nav-item active" aria-current="page" href="/rounds.html?v=3"><span aria-hidden="true">📅</span> Round tracker</a></nav>
+    <div class="sidebar-note"><span class="status-dot"></span> LOCAL DASHBOARD <p>Football insights, powered by data.</p></div>
+  </aside>
+  <main class="workspace">
+    <header class="topbar"><div><span class="breadcrumb">FOOTBALL ANALYZER</span><span class="crumb-divider">/</span><span>Round tracker</span></div><span class="topbar-label"><span class="status-dot"></span> LOCAL ANALYSIS</span></header>
+    <div class="page-content">
+      <div class="page-heading"><div><p class="eyebrow"><span class="status-dot"></span> PREMIER LEAGUE</p><h1>Round tracker<span class="title-dot">.</span></h1><p class="page-description">Follow saved predictions, match results and simulation performance.</p></div><a class="outline-link" href="/?v=3">Compare teams</a></div>
+      <section class="overview-grid" aria-label="Overall performance">
+        <div class="overview-card"><div class="metric-top"><span>PREDICTIONS SCORED</span></div><strong id="overview-count">—</strong><p>Matches with confirmed results</p></div>
+        <div class="overview-card"><div class="metric-top"><span>PREDICTION ACCURACY</span></div><strong id="overview-accuracy">—</strong><p>Share of correct outcomes</p></div>
+        <div class="overview-card"><div class="metric-top"><span>SIMULATION NET</span></div><strong id="overview-net">—</strong><p>Settled 10 kr simulations</p></div>
+      </section>
+      <section class="tracker-status" aria-labelledby="tracker-title"><div class="tracker-copy"><p class="overline">TRACKER STATUS</p><h2 id="tracker-title">Updates & notifications</h2><p id="round-status" role="status">Loading round history…</p><p id="notifications-status" role="status">Enable browser notifications when a round finishes. Keep this page open and the server running.</p></div><div class="tracker-actions"><button id="sync-rounds" class="secondary-btn" type="button">Check now</button><button id="round-notifications" class="secondary-btn" type="button">Enable round notifications</button></div></section>
+      <section class="round-panel" aria-labelledby="round-title">
+        <div class="section-heading round-heading"><div><p class="overline">MATCHWEEK ANALYSIS</p><h2 id="round-title">Round predictions</h2><p class="muted">Choose a round to review predictions, results and simulations.</p></div><div class="round-picker"><label for="round-select">ROUND</label><select id="round-select" class="team-select"></select></div></div>
+        <div class="round-actions"><button id="predict-round" class="predict-btn" type="button">Predict round</button><button id="load-nt-odds" class="secondary-btn" type="button">Load Norsk Tipping odds</button></div>
+        <div class="round-status-stack"><p id="predict-round-status" role="status">Select a round, then predict all eligible matches.</p><p id="nt-status" role="status">Load odds for the selected round to see Norsk Tipping names and prefill the forms.</p></div>
+        <div class="round-summary"><div><p class="overline">ROUND PERFORMANCE</p><p id="selected-metrics"></p></div><div><p class="overline">ROUND SIMULATION</p><p id="selected-simulation"></p></div></div>
+        <div class="table-scroll"><table><thead><tr><th>Match / kickoff</th><th>Home / draw / away</th><th>Saved prediction</th><th>Result</th><th>Feedback</th><th>10 kr simulation</th></tr></thead><tbody id="round-matches"></tbody></table></div>
+      </section>
+      <section class="details-grid" aria-label="Performance details">
+        <div class="detail-card"><p class="overline">MODEL PERFORMANCE</p><h2>Recorded performance</h2><p id="round-metrics" class="details-value"></p><p class="muted">Log loss penalizes confident errors; lower is better. Brier score is the sum of squared errors across the three outcomes.</p></div>
+        <div class="detail-card"><p class="overline">SIMULATED RETURNS</p><h2>10 kr per match</h2><p id="simulation-total" class="details-value"></p><p class="muted">No real bets are placed. Odds can change; results exclude fees, taxes and bookmaker void rules.</p></div>
+      </section>
+      <footer class="footer"><span>FOOTBALL ANALYZER <span class="footer-separator">/</span> ROUND TRACKER</span><span>Fixtures from Fantasy Premier League · Results from Football-Data.co.uk</span></footer>
+    </div>
+  </main>
+</div>
+<script src="menu.js?v=3"></script><script src="round_notifications.js"></script><script src="rounds.js"></script>
 </body>
 </html>
