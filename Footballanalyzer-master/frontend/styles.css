@@ -121,3 +121,13 @@ td form p { margin: 6px 0 0; color: #b7c5b9; }
   .sidebar .brand { margin-left: 42px; }
   .menu-closed .topbar { padding-left: 68px; }
 }
+
+.round-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0; }
+.round-totals span, .round-totals strong { display: block; overflow-wrap: anywhere; }
+.round-totals span { color: #9baa9e; font-size: 11px; }
+.round-totals strong { margin-top: 3px; color: #edf4ed; font-size: 15px; }
+.table-caption { margin: 0 0 12px; color: #9baa9e; font-size: 12px; }
+.result-badge { display: inline-block; padding: 3px 8px; border: 1px solid; border-radius: 6px; font-size: 11px; font-weight: 750; line-height: 1.4; }
+.result-correct { color: #c7f5b1; background: #203923; border-color: #527a4c; }
+.result-missed { color: #ffd5c9; background: #3d2823; border-color: #80564a; }
+.feedback-text { margin: 7px 0 0; color: #b7c5b9; }

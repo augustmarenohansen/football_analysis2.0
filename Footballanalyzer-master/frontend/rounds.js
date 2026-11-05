@@ -62,20 +62,27 @@ function renderRound() {
   rows.replaceChildren();
   const chosen = report.rounds.find(r => `${r.season}:${r.round}` === selector.value);
   document.getElementById('selected-metrics').textContent = chosen ? summary(chosen) : '';
-  document.getElementById('selected-simulation').textContent = chosen ? moneySummary(chosen.simulation) : '';
+  const totals = chosen?.simulation;
+  document.getElementById('round-stake').textContent = totals ? `${totals.stake.toFixed(2)} kr` : '—';
+  document.getElementById('round-payout').textContent = totals?.settled ? `${totals.payout.toFixed(2)} kr` : '—';
+  document.getElementById('round-net').textContent = totals?.settled ? `${totals.net > 0 ? '+' : ''}${totals.net.toFixed(2)} kr` : '—';
+  document.getElementById('selected-simulation').textContent = totals
+    ? `${totals.settled} settled · ${totals.pending} pending (${totals.pending_stake.toFixed(2)} kr)${totals.invalid ? ` · ${totals.invalid} invalid` : ''}`
+    : 'Select a round to see its simulations.';
   for (const match of report.records.filter(r => `${r.season}:${r.round}` === selector.value)) {
     const f = match.forecast;
     const nt = ntRound === selector.value ? ntQuotes.get(match.id) : null;
     let feedback = match.reason || 'Waiting for final result';
+    let outcomeStatus = null;
     if (f && match.result && match.eligible) {
-      feedback = `${f.pick === match.result ? 'Correct' : 'Miss'} · Model assigned ${pct(f.probabilities[match.result])} to the actual result. ${match.included_in_training ? 'Included in latest training data.' : 'Waiting for training results source.'}`;
+      outcomeStatus = f.pick === match.result ? 'Correct' : 'Missed';
+      feedback = `Actual outcome: ${label(match.result)} (${pct(f.probabilities[match.result])} predicted). ${match.included_in_training ? 'Included in latest training data.' : 'Waiting for training results source.'}`;
     }
     const values = [
       `${nt?.home || match.simulation?.source_home || match.home} – ${nt?.away || match.simulation?.source_away || match.away}\n${date(match.kickoff)}`,
       f ? ['home', 'draw', 'away'].map(k => pct(f.probabilities[k])).join(' / ') : 'No saved forecast',
       f ? `${label(f.pick)}\nSaved ${date(f.created_at)}\nModel ${f.model_id}\nResults through ${f.last_result}` : '—',
       match.result ? `${match.score[0]}–${match.score[1]} (${label(match.result)})` : 'Pending',
-      feedback,
     ];
     const row = document.createElement('tr');
     for (const value of values) {
@@ -84,11 +91,23 @@ function renderRound() {
       cell.style.whiteSpace = 'pre-line';
       row.append(cell);
     }
+    const feedbackCell = document.createElement('td');
+    if (outcomeStatus) {
+      const badge = document.createElement('span');
+      badge.className = `result-badge ${outcomeStatus === 'Correct' ? 'result-correct' : 'result-missed'}`;
+      badge.textContent = outcomeStatus;
+      feedbackCell.append(badge);
+    }
+    const feedbackText = document.createElement('p');
+    feedbackText.className = 'feedback-text';
+    feedbackText.textContent = feedback;
+    feedbackCell.append(feedbackText);
+    row.append(feedbackCell);
     const simulationCell = document.createElement('td');
     const simulation = match.simulation;
     if (simulation) {
       const result = match.simulation_result;
-      simulationCell.textContent = `${label(simulation.pick)} @ ${simulation.odds[simulation.pick]} · 10 kr\nModel: ${['home', 'draw', 'away'].map(k => pct(simulation.probabilities[k])).join(' / ')}\nOdds: ${simulation.quote_source} · Checked ${date(simulation.quoted_at)}\nPrediction ${date(simulation.created_at)}\n${result.status === 'settled' ? `Payout ${result.payout.toFixed(2)} kr · Net ${result.net.toFixed(2)} kr` : result.status === 'pending' ? 'Pending' : 'Invalid after kickoff change'}`;
+      simulationCell.textContent = `${label(simulation.pick)} @ ${simulation.odds[simulation.pick]} · 10 kr\nModel: ${['home', 'draw', 'away'].map(k => pct(simulation.probabilities[k])).join(' / ')}\nOdds: ${simulation.quote_source} · Checked ${date(simulation.quoted_at)}\nPrediction ${date(simulation.created_at)}\n${result.status === 'settled' ? `${result.payout > 0 ? 'Won' : 'Lost'} · Payout ${result.payout.toFixed(2)} kr · Net ${result.net > 0 ? '+' : ''}${result.net.toFixed(2)} kr` : result.status === 'pending' ? 'Pending' : 'Invalid after kickoff change'}`;
       simulationCell.style.whiteSpace = 'pre-line';
     } else if (match.kickoff && new Date(match.kickoff) > new Date() && !match.started) {
       const form = document.createElement('form');
