@@ -2,6 +2,7 @@
 import asyncio
 from collections import Counter
 from datetime import datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
 import fcntl
 import hashlib
 import json
@@ -196,12 +197,176 @@ def metrics(records):
             'baseline_log_loss': sum(-math.log(r['forecast']['baseline'][r['result']]) for r in scored)/len(scored)}
 
 
+def simulation_result(record):
+    simulation = record.get('simulation')
+    if not simulation:
+        return None
+    # A postponed match can remain pending; an earlier kickoff invalidates the record.
+    if not record.get('kickoff') or timestamp(simulation['created_at']) >= timestamp(record['kickoff']):
+        return {'status': 'invalid', 'stake': 0, 'payout': 0, 'net': 0}
+    if not record.get('result'):
+        return {'status': 'pending', 'stake': 10, 'payout': None, 'net': None}
+    odds = Decimal(str(simulation['odds'][simulation['pick']]))
+    payout = (Decimal('10') * odds if simulation['pick'] == record['result'] else Decimal('0'))
+    payout = payout.quantize(Decimal('.01'), rounding=ROUND_HALF_UP)
+    return {'status': 'settled', 'stake': 10, 'payout': float(payout), 'net': float(payout - 10)}
+
+
+def simulation_summary(records):
+    results = [x for x in (simulation_result(r) for r in records) if x]
+    settled = [x for x in results if x['status'] == 'settled']
+    pending = [x for x in results if x['status'] == 'pending']
+    return {'settled': len(settled), 'pending': len(pending),
+            'invalid': sum(x['status'] == 'invalid' for x in results),
+            'stake': len(settled) * 10, 'pending_stake': len(pending) * 10,
+            'payout': round(sum(x['payout'] for x in settled), 2),
+            'net': round(sum(x['net'] for x in settled), 2)}
+
+
+def round_finished(records):
+    """Completion is based on every fixture currently assigned to the round."""
+    return bool(records) and all(r.get('result') in OUTCOMES for r in records)
+
+
+def simulate_fixture(fixture_id, prices):
+    """Capture manual prices before creating an independent simulated pick."""
+    if set(prices) != set(OUTCOMES) or any(isinstance(v, bool) or not isinstance(v, (int, float)) or
+                                             not math.isfinite(v) or v <= 1 or v > 10000
+                                             for v in prices.values()):
+        raise ValueError('Enter three finite decimal odds greater than 1 and no more than 10000')
+    DIRECTORY.mkdir(parents=True, exist_ok=True)
+    with _lock, (DIRECTORY / 'sync.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        state = read_state()
+        quoted_at = utcnow()
+        schedule = fetch_schedule(current_season())
+        reconcile(state, schedule, utcnow())
+        record = state['records'].get(fixture_id)
+        if not record:
+            raise ValueError('Fixture not found in current Premier League schedule')
+        if record.get('simulation'):
+            raise ValueError('A simulation has already been saved for this fixture')
+        if not record['kickoff'] or record['started'] or record['score'] is not None or timestamp(record['kickoff']) <= utcnow():
+            raise ValueError('The fixture must have a confirmed future kickoff and must not have started')
+        data = refresh_current(39)
+        if data['seasons'][39] != record['season']:
+            raise ValueError('Model and fixture seasons differ')
+        source = next(s for s in data['snapshots'] if s['league'] == 39 and s['season'] == record['season'])
+        if any(f['teams']['home']['name'] == record['home'] and f['teams']['away']['name'] == record['away']
+               for f in source['fixtures']):
+            raise ValueError('This fixture is already present in the completed-results data')
+        teams = {t['name']: t for t in data['teams'][39].values()}
+        home, away = teams.get(record['home']), teams.get(record['away'])
+        if not home or not away or min(history_games(home), history_games(away)) < 5:
+            raise ValueError('Team names or match history are insufficient for this fixture')
+        inputs = features(home, away, 39)
+        model = data['model']
+        probabilities = {str(c): float(p) for c, p in zip(model.classes_, model.predict_proba([inputs])[0])}
+        if set(probabilities) != set(OUTCOMES) or any(not math.isfinite(p) or p < 0 for p in probabilities.values()) or abs(sum(probabilities.values()) - 1) > 1e-8:
+            raise ValueError('Invalid model probabilities')
+        model_id = archive_model(data)
+        created = utcnow()
+        if created >= timestamp(record['kickoff']):
+            raise ValueError('Kickoff passed while creating the prediction')
+        pick = max(OUTCOMES, key=lambda outcome: probabilities[outcome] * prices[outcome] - 1)
+        record['simulation'] = {'odds': prices, 'quote_source': 'manual', 'quoted_at': quoted_at.isoformat(),
+                                'created_at': created.isoformat(), 'kickoff_at_creation': record['kickoff'],
+                                'round_at_creation': record['round'], 'probabilities': probabilities,
+                                'pick': pick, 'stake': 10, 'model_id': model_id, 'features': inputs,
+                                'last_result': source['last_result'], 'data_checked_at': source['fetched_at']}
+        write_state(state)
+    return report()
+
+
+def predict_round(season, round_number):
+    """Create immutable simulations from one fresh model and one odds snapshot."""
+    # Import here because the odds adapter uses this module's timestamp parser.
+    import norsk_tipping
+    if season != current_season() or not 1 <= round_number <= 38:
+        raise ValueError('Choose a round in the current Premier League season')
+    DIRECTORY.mkdir(parents=True, exist_ok=True)
+    with _lock, (DIRECTORY / 'sync.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        state = read_state()
+        reconcile(state, fetch_schedule(season), utcnow())
+        fixtures = [r for r in state['records'].values() if r['season'] == season and r['round'] == round_number]
+        if not fixtures:
+            raise ValueError('No fixtures found for this round')
+        skips = []
+        candidates = []
+        for record in fixtures:
+            if record.get('simulation'):
+                skips.append({'fixture_id': record['id'], 'reason': 'Already has a saved simulation'})
+            elif not record.get('kickoff') or record['started'] or record.get('score') is not None or timestamp(record['kickoff']) <= utcnow():
+                skips.append({'fixture_id': record['id'], 'reason': 'Kickoff has passed or is unconfirmed'})
+            else:
+                candidates.append(record)
+        if not candidates:
+            return {'created': 0, 'skipped': skips, 'quotes': [], 'report': report()}
+
+        # Refresh training data first, then get prices before producing predictions.
+        data = refresh_current(39)
+        if data['seasons'].get(39) != season:
+            raise ValueError('Model and fixture seasons differ')
+        source = next(s for s in data['snapshots'] if s['league'] == 39 and s['season'] == season)
+        teams = {t['name']: t for t in data['teams'][39].values()}
+        completed = {(f['teams']['home']['name'], f['teams']['away']['name']) for f in source['fixtures']}
+        starts = [timestamp(r['kickoff']).astimezone(timezone.utc).date() for r in candidates]
+        from datetime import timedelta
+        events, fetched_at = norsk_tipping.fetch_events(min(starts)-timedelta(days=1), max(starts)+timedelta(days=1))
+        quotes = norsk_tipping.match_quotes(events, candidates, utcnow())
+        by_id = {quote['fixture_id']: quote for quote in quotes}
+        model_id = archive_model(data)
+        created_count = 0
+        for record in candidates:
+            quote = by_id.get(record['id'])
+            if not quote:
+                skips.append({'fixture_id': record['id'], 'reason': 'No unambiguous open Norsk Tipping odds'})
+                continue
+            home, away = teams.get(record['home']), teams.get(record['away'])
+            if (record['home'], record['away']) in completed:
+                skips.append({'fixture_id': record['id'], 'reason': 'Already in completed-results data'})
+                continue
+            if not home or not away or min(history_games(home), history_games(away)) < 5:
+                skips.append({'fixture_id': record['id'], 'reason': 'Insufficient or unmatched team history'})
+                continue
+            inputs = features(home, away, 39)
+            model = data['model']
+            probabilities = {str(c): float(p) for c, p in zip(model.classes_, model.predict_proba([inputs])[0])}
+            if set(probabilities) != set(OUTCOMES) or any(not math.isfinite(p) or p < 0 for p in probabilities.values()) or abs(sum(probabilities.values()) - 1) > 1e-8:
+                raise ValueError('Invalid model probabilities; no round simulations were saved')
+            created = utcnow()
+            quoted = datetime.fromtimestamp(fetched_at, timezone.utc)
+            if (created < quoted or (created - quoted).total_seconds() > norsk_tipping.CACHE_SECONDS or
+                    created >= timestamp(record['kickoff']) or created >= timestamp(quote['bet_stop'])):
+                skips.append({'fixture_id': record['id'], 'reason': 'Odds expired or kickoff passed before prediction'})
+                continue
+            prices = quote['odds']
+            pick = max(OUTCOMES, key=lambda outcome: probabilities[outcome] * prices[outcome] - 1)
+            record['simulation'] = {'odds': prices, 'quote_source': 'Norsk Tipping',
+                                    'quoted_at': quoted.isoformat(), 'created_at': created.isoformat(),
+                                    'kickoff_at_creation': record['kickoff'], 'round_at_creation': record['round'],
+                                    'probabilities': probabilities, 'pick': pick, 'stake': 10, 'model_id': model_id,
+                                    'features': inputs, 'last_result': source['last_result'],
+                                    'data_checked_at': source['fetched_at'],
+                                    'event_id': quote['event_id'], 'market_id': quote['market_id'],
+                                    'bet_stop': quote['bet_stop'], 'source_home': quote['home'], 'source_away': quote['away']}
+            created_count += 1
+        write_state(state)
+    return {'created': created_count, 'skipped': skips, 'quotes': quotes, 'report': report()}
+
+
 def report():
     state = read_state()
     records = sorted(state['records'].values(), key=lambda r: (r['season'], r['round'] or 99, r['kickoff'] or '9999'))
+    for record in records:
+        record['simulation_result'] = simulation_result(record)
     return {**{k: v for k, v in state.items() if k != 'records'}, 'records': records,
-            'metrics': metrics(records), 'interval_minutes': INTERVAL//60,
-            'rounds': [{'season': season, 'round': number, **metrics([r for r in records if r['season'] == season and r['round'] == number])}
+            'metrics': metrics(records), 'simulation': simulation_summary(records), 'interval_minutes': INTERVAL//60,
+            'rounds': [{'season': season, 'round': number,
+                        'finished': round_finished([r for r in records if r['season'] == season and r['round'] == number]),
+                        **metrics([r for r in records if r['season'] == season and r['round'] == number]),
+                        'simulation': simulation_summary([r for r in records if r['season'] == season and r['round'] == number])}
                        for season, number in sorted({(r['season'], r['round']) for r in records if r['round']})]}
 
 

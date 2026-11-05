@@ -127,3 +127,110 @@ class RoundTests(unittest.TestCase):
         self.assertEqual(refresh.call_count, 2)
         self.assertIsNone(first['error'])
         self.assertEqual(first['records'][0]['forecast'], second['records'][0]['forecast'])
+
+    def test_round_finished_requires_every_assigned_match_to_have_a_final_result(self):
+        self.assertFalse(tracker.round_finished([]))
+        self.assertFalse(tracker.round_finished([{'result': 'home'}, {'result': None}]))
+        self.assertFalse(tracker.round_finished([{'result': 'home'}, {}]))
+        self.assertTrue(tracker.round_finished([{'result': 'home'}, {'result': 'draw'}, {'result': 'away'}]))
+        state = tracker.read_state()
+        match1, match2 = fixture('2026:1', days=-3, score=[1, 0]), fixture('2026:2', days=-1)
+        tracker.reconcile(state, [match1, match2], NOW)
+        tracker.write_state(state)
+        self.assertFalse(tracker.report()['rounds'][0]['finished'])
+        match2['score'] = [0, 0]
+        tracker.reconcile(state, [match2], NOW)
+        tracker.write_state(state)
+        self.assertTrue(tracker.report()['rounds'][0]['finished'])
+
+    def test_simulation_uses_quotes_before_prediction_and_preserves_forecast(self):
+        state = tracker.read_state()
+        tracker.reconcile(state, [fixture()], NOW)
+        tracker.forecast_upcoming(state, bundle(), NOW, 'old-model')
+        original = copy.deepcopy(state['records']['2026:1']['forecast'])
+        tracker.write_state(state)
+        with patch.object(tracker, 'fetch_schedule', return_value=[fixture()]), \
+             patch.object(tracker, 'refresh_current', return_value=bundle()), \
+             patch.object(tracker, 'archive_model', return_value='new-model'):
+            report = tracker.simulate_fixture('2026:1', {'home': 1.5, 'draw': 2, 'away': 5})
+            with self.assertRaises(ValueError):
+                tracker.simulate_fixture('2026:1', {'home': 1.5, 'draw': 2, 'away': 5})
+        row = report['records'][0]
+        self.assertEqual(row['forecast'], original)
+        self.assertEqual(row['simulation']['pick'], 'away')  # .2*5 > .5*1.5
+        self.assertLessEqual(row['simulation']['quoted_at'], row['simulation']['created_at'])
+        self.assertEqual(report['simulation']['pending_stake'], 10)
+        state = tracker.read_state()
+        tracker.reconcile(state, [fixture(score=[0, 2])], NOW+timedelta(days=3))
+        self.assertEqual(tracker.simulation_summary(state['records'].values())['net'], 40)
+        tracker.reconcile(state, [fixture(score=[1, 0])], NOW+timedelta(days=3))
+        self.assertEqual(tracker.simulation_summary(state['records'].values())['net'], -10)
+        tracker.reconcile(state, [fixture(days=-1, score=[1, 0])], NOW+timedelta(days=3))
+        self.assertEqual(tracker.simulation_summary(state['records'].values())['invalid'], 1)
+
+    def test_simulation_rejects_invalid_quotes_and_started_games(self):
+        for prices in ({'home': 1, 'draw': 2, 'away': 3}, {'home': float('nan'), 'draw': 2, 'away': 3},
+                       {'home': 2, 'draw': 2}, {'home': 2, 'draw': 2, 'away': float('inf')}):
+            with self.assertRaises(ValueError):
+                tracker.simulate_fixture('2026:1', prices)
+        with patch.object(tracker, 'fetch_schedule', return_value=[fixture(days=-1)]), \
+             patch.object(tracker, 'refresh_current') as refresh:
+            with self.assertRaises(ValueError):
+                tracker.simulate_fixture('2026:1', {'home': 2, 'draw': 2, 'away': 2})
+            refresh.assert_not_called()
+
+    def test_predict_round_creates_once_and_reports_unmatched(self):
+        import norsk_tipping as nt
+        state = tracker.read_state()
+        existing = fixture('2026:3')
+        tracker.reconcile(state, [existing], NOW)
+        state['records'][existing['id']]['simulation'] = {'marker': 'preserved'}
+        tracker.write_state(state)
+        schedule = [fixture(), fixture('2026:2'), existing]
+        quote = {'fixture_id': '2026:1', 'home': 'A', 'away': 'B', 'event_id': 'ev', 'market_id': 'market',
+                 'bet_stop': (NOW+timedelta(days=2)).isoformat(), 'odds': {'home': 1.5, 'draw': 2, 'away': 5}}
+        # report() expects real simulation data; use the stored state to check preservation.
+        with patch.object(tracker, 'current_season', return_value=2026), \
+             patch.object(tracker, 'fetch_schedule', return_value=schedule) as schedule_fetch, \
+             patch.object(tracker, 'refresh_current', return_value=bundle()) as refresh, \
+             patch.object(tracker, 'archive_model', return_value='model'), \
+             patch.object(nt, 'fetch_events', return_value=([], NOW.timestamp())) as fetch, \
+             patch.object(nt, 'match_quotes', return_value=[quote]), \
+             patch.object(tracker, 'report', return_value={}):
+            result = tracker.predict_round(2026, 9)
+            again = tracker.predict_round(2026, 9)
+        saved = tracker.read_state()['records']
+        self.assertEqual(result['created'], 1)
+        self.assertEqual(len(result['skipped']), 2)
+        self.assertEqual(again['created'], 0)
+        self.assertEqual(saved['2026:3']['simulation'], {'marker': 'preserved'})
+        self.assertEqual(saved['2026:1']['simulation']['pick'], 'away')
+        self.assertEqual(saved['2026:1']['simulation']['quote_source'], 'Norsk Tipping')
+        self.assertEqual(saved['2026:1']['simulation']['event_id'], 'ev')
+        self.assertEqual(saved['2026:1']['simulation']['quoted_at'], NOW.isoformat())
+        self.assertEqual(schedule_fetch.call_count, 2)
+        self.assertEqual(refresh.call_count, 2)  # the unmatched match can be retried
+        self.assertEqual(fetch.call_count, 2)
+
+    def test_predict_round_rejects_expired_prices_and_failed_lookup(self):
+        import norsk_tipping as nt
+        quote = {'fixture_id': '2026:1', 'home': 'A', 'away': 'B', 'event_id': 'ev', 'market_id': 'market',
+                 'bet_stop': (NOW+timedelta(days=2)).isoformat(), 'odds': {'home': 2, 'draw': 3, 'away': 4}}
+        with patch.object(tracker, 'current_season', return_value=2026), \
+             patch.object(tracker, 'fetch_schedule', return_value=[fixture()]), \
+             patch.object(tracker, 'refresh_current', return_value=bundle()), \
+             patch.object(tracker, 'archive_model', return_value='model'), \
+             patch.object(nt, 'fetch_events', return_value=([], (NOW-timedelta(seconds=61)).timestamp())), \
+             patch.object(nt, 'match_quotes', return_value=[quote]):
+            result = tracker.predict_round(2026, 9)
+            self.assertEqual(result['created'], 0)
+            self.assertIn('expired', result['skipped'][0]['reason'])
+            self.assertIsNone(tracker.read_state()['records']['2026:1']['forecast'])
+        before = (tracker.DIRECTORY/'history.json').read_bytes()
+        with patch.object(tracker, 'current_season', return_value=2026), \
+             patch.object(tracker, 'fetch_schedule', return_value=[fixture()]), \
+             patch.object(tracker, 'refresh_current', return_value=bundle()), \
+             patch.object(nt, 'fetch_events', side_effect=nt.SourceError('offline')):
+            with self.assertRaises(nt.SourceError):
+                tracker.predict_round(2026, 9)
+        self.assertEqual((tracker.DIRECTORY/'history.json').read_bytes(), before)

@@ -122,3 +122,19 @@ Before finishing, review the diff for unrelated edits, secrets, generated artifa
 `pl_rounds.py` implements the user-authorized startup/hourly worker while the app runs, plus manual synchronization. It uses official FPL fixtures and final results for scheduling/evaluation, and the existing Football-Data refresh for training. Never backfill predictions for started matches. Preserve original forecast probabilities, features, timestamps, original kickoff/round and archived model IDs when retraining, rescheduling or correcting results. Keep feedback separate from inclusion in training when source publication differs. No automatic accuracy improvement is promised.
 
 Preserve `data/pl_rounds/history.json` and archived models in `data/pl_rounds/models/`; these hold prospective evidence and are excluded from Git. Tests must mock source access and isolate history/model artifacts in temporary directories. The schedule runs only while the server is up; do not imply the computer wakes itself. The UI is `frontend/rounds.html`, with local report and explicit sync endpoints in `api/main.py`.
+
+### Fixed-stake simulation
+
+The PL tracker also accepts manually entered 1X2 odds before creating a separate one-match 10 kr simulation. Preserve immutable original forecast and simulation records, quote and prediction timestamps, independent probabilities, and no-retrospective-entry checks. Choose the highest estimated return, including negative cases, as a simulation rule rather than a recommendation. Report settled and pending stakes separately and never treat missing games as simulated losses. This feature places no real bets and has no verified automatic odds feed. Keep odds out of match-model inputs and never infer profitability from this simulation alone.
+
+### Norsk Tipping on-demand quotes
+
+`norsk_tipping.py` fetches public pre-match Premier League events only when the round UI asks. It displays official names and pre-fills manual inputs only after unambiguous competition, kickoff and team matching. Do not rewrite historical team identity, forecasts, or simulations. Preserve conservative caching and HTTP 429 handling; the provider's rate limits and usage permissions are not established. Do not add scheduled requests without understanding applicable provider terms. Cached, user-reviewed prices are not verified live quotes and must remain labelled accordingly. Unit tests must mock network access.
+
+### Whole-round prediction
+
+The user-requested `Predict round` action fetches current schedule, model data and one Norsk Tipping snapshot before making separate 10 kr simulations. Keep quote capture earlier than simulation creation; retain event/market IDs, source names and retrieval time; validate teams, kickoff and market, expiry and snapshot age. Skip started, already-simulated, unmatched or insufficient-history matches, and show coverage. Never rewrite existing forecast or simulation records; no real bets are placed. No scheduled Norsk Tipping polling.
+
+### Round completion notifications
+
+`frontend/round_notifications.js` provides opt-in browser notifications using the local round report. `finished` means all fixtures currently assigned to the round have confirmed results, subject to the existing four-hour delay. Baseline already-finished rounds when enabling, persist notified rounds in browser local storage, avoid repeated alerts, and keep notification polling independent of odds input state. No external messages are sent. Notifications require the page, server, awake computer, and browser permission; do not imply a background push service exists.

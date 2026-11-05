@@ -21,20 +21,31 @@
   <p>Rounds with matches in the next seven days receive forecasts. Missed kickoffs are marked without inventing past predictions. New published results are used to retrain the model for future matches, including both wins and mistakes.</p>
   <button id="sync-rounds" class="predict-btn">Check now</button>
   <p id="round-status" role="status">Loading round history…</p>
+  <button id="round-notifications" class="predict-btn" type="button">Enable round notifications</button>
+  <p id="notifications-status" role="status">Enable browser notifications to be notified when a round finishes. Keep this page open and the server running.</p>
   <h2>Recorded performance</h2>
   <p id="round-metrics"></p>
   <p>Log loss penalizes confident errors; lower is better. Brier score is the sum of squared errors over the three outcomes. These measurements start with saved forecasts, not earlier matches. Learning does not guarantee improvement.</p>
+  <h2>10 kr per match · simulation</h2>
+  <p>Predict the round using Norsk Tipping odds, or enter odds for individual matches. The model selects the outcome with the highest estimated return and simulates 10 kr per match. No real bets are placed. Odds can change; results do not include fees, taxes, or bookmaker void rules.</p>
+  <p id="simulation-total"></p>
   <label for="round-select">Round</label>
   <select id="round-select" class="team-select"></select>
+  <button id="predict-round" class="predict-btn" type="button">Predict round</button>
+  <p id="predict-round-status" role="status">Select a round, then predict all eligible matches.</p>
+  <button id="load-nt-odds" class="predict-btn" type="button">Load Norsk Tipping odds</button>
+  <p id="nt-status" role="status">Load odds for the selected round to see Norsk Tipping names and prefill the forms.</p>
   <p id="selected-metrics"></p>
+  <p id="selected-simulation"></p>
   <div class="table-scroll">
     <table>
-      <thead><tr><th>Match / kickoff</th><th>Home / draw / away</th><th>Saved prediction</th><th>Result</th><th>Feedback</th></tr></thead>
+      <thead><tr><th>Match / kickoff</th><th>Home / draw / away</th><th>Saved prediction</th><th>Result</th><th>Feedback</th><th>10 kr simulation</th></tr></thead>
       <tbody id="round-matches"></tbody>
     </table>
   </div>
   <p>Schedule and round numbers: official Fantasy Premier League feed. Training results: Football-Data.co.uk. The two sources may update at different times; result feedback can appear before training includes it. Round assignments can change after postponements; original forecast details remain stored.</p>
 </main>
+<script src="round_notifications.js"></script>
 <script src="rounds.js"></script>
 </body>
 </html>
